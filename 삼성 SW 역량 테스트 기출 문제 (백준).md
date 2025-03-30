@@ -304,20 +304,44 @@ void input() {
 deque 활용 문제
 ***
 
-## 문제
-> 링크
+## 13458: 시험 감독
+> https://www.acmicpc.net/problem/13458
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+
+int N, A[1000000], B, C;
+
+int main() {
+  scanf("%d", &N);
+  for (int i = 0; i < N; ++i) {
+    scanf("%d", &A[i]);
+  }
+  scanf("%d %d", &B, &C);
+
+  long long ret = N;
+  for (int i = 0; i < N; ++i) {
+    if (A[i] > B) {
+      A[i] -= B;
+      ret += (A[i] + C - 1) / C;
+    }
+  }
+
+  printf("%lld", ret);
+
+  return 0;
+}
 ```
 </details>
 
 ***
 ### 설명
-
+1. int형 범위를 벗어날 가능성이 있다면 long long 자료형을 사용하기.
+2. A를 B로 나눈 후 올림한 값 => (A + B - 1) / B;
 ***
 
 ## 문제
