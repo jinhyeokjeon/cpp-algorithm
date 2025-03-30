@@ -225,6 +225,117 @@ void input() {
 3. 보드를 Info struct 에 집어넣고, 보드의 회전, 블록의 이동, 가장 큰 블록 구하기 연산을 구조체 함수로 구현하면 코드가 깔끔하다.
 ***
 
+## 3190. 뱀
+> https://www.acmicpc.net/problem/3190
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+#include <cstdio>
+#include <deque>
+using namespace std;
+
+struct Pos {
+  int y, x;
+};
+struct Info {
+  int t;
+  char d;
+};
+const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { 1, 0, -1, 0 };
+int N, K, L, y, x, d;
+char board[100][100]; // 1: 뱀, 2: 사과
+deque<Pos> snake;
+deque<Info> dir_info;
+void input();
+
+int main() {
+  input();
+  int t;
+  for (t = 1; ; ++t) {
+    // 1. 몸길이 늘리기
+    y += dy[d]; x += dx[d];
+    // 2. 게임 종료 조건
+    if (y < 0 || y >= N || x < 0 || x >= N || board[y][x] == 1) break;
+    // 3-2. 사과가 없을 때
+    if (board[y][x] == 0) {
+      board[snake.front().y][snake.front().x] = 0;
+      snake.pop_front();
+    }
+    snake.push_back({ y, x });
+    board[y][x] = 1;
+    // 4. 방향 변환
+    if (!dir_info.empty() && dir_info.front().t == t) {
+      if (dir_info.front().d == 'L') {
+        d = (d + 3) % 4;
+      }
+      else {
+        d = (d + 1) % 4;
+      }
+      dir_info.pop_front();
+    }
+  }
+  printf("%d", t);
+  return 0;
+}
+
+void input() {
+  scanf("%d %d", &N, &K);
+  while (K--) {
+    int i, j;
+    scanf("%d %d", &i, &j);
+    board[i - 1][j - 1] = 2;
+  }
+  scanf("%d", &L);
+  dir_info.resize(L);
+  for (int i = 0; i < L; ++i) {
+    scanf("%d %c", &dir_info[i].t, &dir_info[i].d);
+  }
+  snake.push_back({ 0, 0 });
+  board[0][0] = 1;
+}
+```
+</details>
+
+***
+### 설명
+deque 활용 문제
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
 ## 문제
 > 링크
 ***
