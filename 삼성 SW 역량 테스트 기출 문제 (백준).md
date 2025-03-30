@@ -1,9 +1,11 @@
 # 삼성 SW 역량 테스트 기출 문제 (백준)
-
-## 13460 구슬 탈출 2
+## 13460. 구슬 탈출 2
 > https://www.acmicpc.net/problem/13460
-
+***
 ### 코드
+<details>
+<summary>C++</summary>
+
 ```cpp
 #include <cstdio>
 #include <cstring>
@@ -104,6 +106,9 @@ void input() {
   }
 }
 ```
+</details>
+
+***
 ### 설명
 1. red와 blue 값을 매개변수로 넘기지 않고, 보드를 기울이기 전에 red와 blue 값을 저장해두면 전역변수로 사용할 수 있다. 
 
@@ -111,4 +116,127 @@ void input() {
 2. 보드를 같은 방향으로 연속해서 두 번 이상 기울이는건 의미 없다. 
 
    => 가지치기.
-****
+***
+
+## 12100. 2048 (Easy)
+> https://www.acmicpc.net/problem/12100
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+#include <cstdio>
+#include <cstring>
+
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
+struct Info {
+  int board[20][20];
+  void rotate();
+  void move();
+  void calc();
+};
+int tmp[20][20];
+
+int N;
+Info info;
+void input();
+
+int ret;
+void dfs(int depth);
+
+int main() {
+  input();
+  dfs(0);
+  printf("%d", ret);
+  return 0;
+}
+
+void dfs(int depth) {
+  if (depth == 5) {
+    info.calc();
+    return;
+  }
+  Info saved = info;
+  for (int i = 0; i < 4; ++i) {
+    info = saved;
+    info.move();
+    dfs(depth + 1);
+    saved.rotate();
+  }
+}
+
+void Info::calc() {
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      ret = max(ret, board[i][j]);
+    }
+  }
+}
+
+void Info::move() {
+  for (int x = 0; x < N; ++x) {
+    int btm = N - 1;
+    for (int y = N - 2; y >= 0; --y) {
+      if (board[y][x] == 0) continue;
+      if (board[btm][x] == 0) {
+        int n = board[y][x];
+        board[y][x] = 0;
+        board[btm][x] = n;
+      }
+      else if (board[btm][x] == board[y][x]) {
+        board[btm--][x] *= 2;
+        board[y][x] = 0;
+      }
+      else {
+        int n = board[y][x];
+        board[y][x] = 0;
+        board[--btm][x] = n;
+      }
+    }
+  }
+}
+
+void Info::rotate() {
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      tmp[x][N - 1 - y] = board[y][x];
+    }
+  }
+  memcpy(board, tmp, sizeof(board));
+}
+
+void input() {
+  scanf("%d", &N);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &info.board[i][j]);
+    }
+  }
+}
+```
+</details>
+
+***
+### 설명
+1. 가장 큰 블록만을 출력하면 되는 문제이므로, 보드를 회전하여도 상관 없다. 따라서 보드를 회전시키며 블록을 이동하면, 한 쪽 방향으로 이동하는 부분만 구현하면 된다.
+2. Info 값을 매개변수로 넘기는게 아니라, 전역변수로 설정하고 재귀호출 전에 미리 저장해놓는 방식으로 구현하면 코드가 훨씬 깔끔해진다.
+3. 보드를 Info struct 에 집어넣고, 보드의 회전, 블록의 이동, 가장 큰 블록 구하기 연산을 구조체 함수로 구현하면 코드가 깔끔하다.
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
