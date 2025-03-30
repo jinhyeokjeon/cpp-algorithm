@@ -544,20 +544,53 @@ void input() {
 vector<T> 대상으로 emplace_back() 연산을 하면, T() 가 vector의 맨 뒤로 삽입된다. 이를 이용하여 필요할 때마다 vector의 크기를 늘릴 수 있다.
 ***
 
-## 문제
-> 링크
+## 14501: 퇴사
+> https://www.acmicpc.net/problem/14501
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
+int N, T[16], P[16];
+void input();
+
+int ret;
+void dfs(int day, int range, int sum);
+
+int main() {
+  input();
+  dfs(1, 0, 0);
+  printf("%d", ret);
+  return 0;
+}
+
+void dfs(int day, int range, int sum) {
+  if (day == N + 1) {
+    ret = max(ret, sum);
+    return;
+  }
+  dfs(day + 1, range, sum);
+  if (range < day && day + T[day] - 1 <= N) {
+    dfs(day + 1, day + T[day] - 1, sum + P[day]);
+  }
+}
+
+void input() {
+  scanf("%d", &N);
+  for (int i = 1; i <= N; ++i) {
+    scanf("%d %d", &T[i], &P[i]);
+  }
+}
 ```
 </details>
 
 ***
 ### 설명
-
+N값이 최대 15이므로, 모든 경우를 다 세어도 2^15(약 32000) 밖에 되지 않는다.
 ***
 
 ## 문제
