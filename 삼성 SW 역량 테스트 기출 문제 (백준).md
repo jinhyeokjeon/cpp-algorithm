@@ -433,6 +433,229 @@ void input() {
 4. unsigned int 변수는 scanf 에서는 %u, printf에서는 %u 사용한다.
 ***
 
+## 14500: 테트로미노
+> https://www.acmicpc.net/problem/14500
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+int N, M, board[500][500];
+bool basic[7][4][4] = {
+  {{1, 1, 1, 1}},
+  {{1, 1}, {1, 1}},
+  {{1}, {1}, {1, 1}},
+  {{0, 1}, {0, 1}, {1, 1}},
+  {{1}, {1, 1}, {0, 1}},
+  {{0, 1}, {1, 1}, {1}},
+  {{1, 1, 1}, {0, 1}}
+};
+vector<vector<pair<int, int>>> shapes;
+void input();
+
+int calc(int idx);
+
+int main() {
+  input();
+  int ret = 0;
+  for (int i = 0; i < shapes.size(); ++i) {
+    ret = max(ret, calc(i));
+  }
+  printf("%d", ret);
+  return 0;
+}
+
+int calc(int idx) {
+  auto& shape = shapes[idx];
+  int ret = 0;
+
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < M; ++x) {
+      int sum = 0;
+      for (auto& p : shape) {
+        int yy = y + p.first, xx = x + p.second;
+        if (yy < 0 || yy >= N || xx < 0 || xx >= M) {
+          sum = 0;
+          break;
+        }
+        sum += board[yy][xx];
+      }
+      ret = max(ret, sum);
+    }
+  }
+
+  return ret;
+}
+
+void rotate(int idx) {
+  bool tmp[4][4];
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      tmp[x][3 - y] = basic[idx][y][x];
+    }
+  }
+  memcpy(basic[idx], tmp, sizeof(tmp));
+}
+
+void add_shape(int idx, int rot) { // basic[idx] 도형을 회전시키며 rot번 추가
+  for (int r = 0; r < rot; ++r) {
+    shapes.emplace_back();
+    int yy = -1, xx = -1;
+    for (int y = 0; y < 4; ++y) {
+      for (int x = 0; x < 4; ++x) {
+        if (basic[idx][y][x]) {
+          if (yy == -1) {
+            yy = y; xx = x;
+          }
+          shapes.back().push_back({ y - yy, x - xx });
+        }
+      }
+    }
+    rotate(idx);
+  }
+}
+
+void input() {
+  scanf("%d %d", &N, &M);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < M; ++j) {
+      scanf("%d", &board[i][j]);
+    }
+  }
+
+  add_shape(0, 2);
+  add_shape(1, 1);
+  for (int i = 2; i < 7; ++i) {
+    add_shape(i, 4);
+  }
+}
+```
+</details>
+
+***
+### 설명
+vector<T> 대상으로 emplace_back() 연산을 하면, T() 가 vector의 맨 뒤로 삽입된다. 이를 이용하여 필요할 때마다 vector의 크기를 늘릴 수 있다.
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
 ## 문제
 > 링크
 ***
