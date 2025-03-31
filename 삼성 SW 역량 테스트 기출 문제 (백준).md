@@ -764,20 +764,80 @@ d = {0(북), 1(동), 2(남), 3(서)}
 4. d 방향으로 후진 : y -= dy[d], x -= dx[d];
 ***
 
-## 문제
-> 링크
+## 14888. 연산자 끼워넣기
+> https://www.acmicpc.net/problem/14888
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <algorithm>
+using namespace std;
+
+int N, A[11], op_num[4]; // + - * /
+void input();
+
+int chosed[10], max_v = -1000000001, min_v = 1000000001;
+void dfs(int idx);
+
+int main() {
+	input();
+	dfs(0);
+	printf("%d\n%d", max_v, min_v);
+	return 0;
+}
+
+void calc() {
+	int ret = A[0];
+	for (int i = 0; i < N - 1; ++i) {
+		if (chosed[i] == 0) {
+			ret += A[i + 1];
+		}
+		else if (chosed[i] == 1) {
+			ret -= A[i + 1];
+		}
+		else if (chosed[i] == 2) {
+			ret *= A[i + 1];
+		}
+		else {
+			ret /= A[i + 1];
+		}
+	}
+	max_v = max(max_v, ret);
+	min_v = min(min_v, ret);
+}
+void dfs(int idx) {
+	if (idx == N - 1) {
+		calc();
+		return;
+	}
+	for (int i = 0; i < 4; ++i) {
+		if (op_num[i] > 0) {
+			--op_num[i];
+			chosed[idx] = i;
+			dfs(idx + 1);
+			++op_num[i];
+		}
+	}
+}
+
+void input() {
+	scanf("%d", &N);
+	for (int i = 0; i < N; ++i) {
+		scanf("%d", &A[i]);
+	}
+	for (int i = 0; i < 4; ++i) {
+		scanf("%d", &op_num[i]);
+	}
+}
 ```
 </details>
 
 ***
 ### 설명
-
+dfs로 연산자 선택하는 문제.
 ***
 
 ## 문제
