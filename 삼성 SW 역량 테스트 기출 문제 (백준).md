@@ -593,7 +593,7 @@ void input() {
 N값이 최대 15이므로, 모든 경우를 다 세어도 2^15(약 32000) 밖에 되지 않는다.
 ***
 
-## 연구소
+## 14502. 연구소
 > https://www.acmicpc.net/problem/14502
 ***
 ### 코드
@@ -689,20 +689,79 @@ void input() {
 2. bfs로 바이러스 확산
 ***
 
-## 문제
-> 링크
+## 14503. 로봇 청소기
+> https://www.acmicpc.net/problem/14503
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+
+const int dy[4] = { -1, 0, 1, 0 }, dx[4] = { 0, 1, 0, -1 };
+int N, M, y, x, d;
+char board[50][50]; // 0 = 청소되지 않은 빈칸. 1 = 벽. 2 = 청소된 빈칸
+void input();
+
+int main() {
+	input();
+	int ret = 0;
+	while (true) {
+		// 1. 현재 칸이 아직 청소되지 않은 경우
+		if (board[y][x] == 0) {
+			board[y][x] = 2;
+			++ret;
+		}
+		bool cleaned = false;
+		for (int d = 0; d < 4; ++d) {
+			int yy = y + dy[d], xx = x + dx[d];
+			if (0 <= yy && yy < N && 0 <= xx && xx < M && board[yy][xx] == 0) {
+				cleaned = true;
+			}
+		}
+		// 2. 주변 4칸 중 청소되지 않은 빈칸이 없는 경우
+		if (!cleaned) {
+			int yy = y - dy[d], xx = x - dx[d];
+			if (0 <= yy && yy < N && 0 <= xx && xx < M && board[yy][xx] != 1) {
+				y = yy; x = xx;
+			}
+			else {
+				break;
+			}
+		}
+		// 3. 주변 4칸 중 청소되지 않은 빈칸이 있는 경우
+		else {
+			d = (d + 3) % 4;
+			int yy = y + dy[d], xx = x + dx[d];
+			if (0 <= yy && yy < N && 0 <= xx && xx < M && board[yy][xx] == 0) {
+				y = yy; x = xx;
+			}
+		}
+	}
+	printf("%d", ret);
+	return 0;
+}
+
+void input() {
+	scanf("%d %d", &N, &M);
+	scanf("%d %d %d", &y, &x, &d);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < M; ++j) {
+			scanf("%hhd", &board[i][j]);
+		}
+	}
+}
 ```
 </details>
 
 ***
 ### 설명
-
+d = {0(북), 1(동), 2(남), 3(서)}
+1. 시계방향 회전 : d = (d + 1) % 4;
+2. 반시계방향 회전 : d = (d - 1 + 4) / d = (d + 3) % 4
+3. d 방향으로 전진 : y += dy[d], x += dx[d];
+4. d 방향으로 후진 : y -= dy[d], x -= dx[d];
 ***
 
 ## 문제
