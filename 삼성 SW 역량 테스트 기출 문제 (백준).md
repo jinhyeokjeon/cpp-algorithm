@@ -1033,7 +1033,7 @@ void input() {
 조건을 제대로 읽고 차분히 풀어야 하는 문제
 ***
 
-## 톱니바퀴
+## 14891. 톱니바퀴
 > https://www.acmicpc.net/problem/14891
 ***
 ### 코드
@@ -1110,20 +1110,113 @@ void rotate(int num, int dir) {
 톱니바퀴 돌리기 전에 재귀호출을 먼저 해야 한다!!
 ***
 
-## 문제
-> 링크
+## 15683. 감시
+> https://www.acmicpc.net/problem/15683
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+struct Info {
+	int y, x, type;
+};
+
+const int dy[4] = { -1, 0, 1, 0 }, dx[4] = { 0, 1, 0, -1 }; // 위, 오, 아, 왼
+
+int N, M, c_num;
+int d_num[5] = { 4, 2, 4, 4, 1 };
+char board[8][8]; // 0: 빈칸, 1~5: cctv, 6: 벽, 7: 감시됨
+Info cctv[8];
+void input();
+
+int ret = 100;
+void dfs(int idx);
+
+int main() {
+	input();
+	dfs(0);
+	printf("%d", ret);
+}
+
+void fill_board(int y, int x, int d) {
+	while (0 <= y && y < N && 0 <= x && x < M && board[y][x] != 6) {
+		board[y][x] = 7;
+		y += dy[d]; x += dx[d];
+	}
+}
+
+void watch(int idx, int dir) {
+	Info& c = cctv[idx];
+	if (c.type == 0) {
+		fill_board(c.y, c.x, dir);
+	}
+	else if (c.type == 1) {
+		fill_board(c.y, c.x, dir);
+		fill_board(c.y, c.x, (dir + 2) % 4);
+	}
+	else if (c.type == 2) {
+		fill_board(c.y, c.x, dir);
+		fill_board(c.y, c.x, (dir + 1) % 4);
+	}
+	else if (c.type == 3) {
+		for (int d = 0; d < 4; ++d) {
+			if (d == dir) continue;
+			fill_board(c.y, c.x, d);
+		}
+	}
+	else if (c.type == 4) {
+		for (int d = 0; d < 4; ++d) {
+			fill_board(c.y, c.x, d);
+		}
+	}
+}
+
+void dfs(int idx) {
+	if (idx == c_num) {
+		int cnt = 0;
+		for (int i = 0; i < N; ++i) {
+			for (int j = 0; j < M; ++j) {
+				if (board[i][j] == 0) {
+					++cnt;
+				}
+			}
+		}
+		ret = min(ret, cnt);
+		return;
+	}
+
+	int tmp[8][8];
+	memcpy(tmp, board, sizeof(board));
+
+	for (int d = 0; d < d_num[cctv[idx].type]; ++d) {
+		watch(idx, d);
+		dfs(idx + 1);
+		memcpy(board, tmp, sizeof(board));
+	}
+}
+
+void input() {
+	scanf("%d %d", &N, &M);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < M; ++j) {
+			scanf("%hhd", &board[i][j]);
+			if (1 <= board[i][j] && board[i][j] <= 5) {
+				cctv[c_num++] = { i, j, board[i][j] - 1 };
+			}
+		}
+	}
+}
 ```
 </details>
 
 ***
 ### 설명
-
+dfs 함수 내부에서 board에 연산을 하기 전에, board 값을 미리 저장해두고 다음 연산 이전에 복원하는 방식을 사용하면 깔끔하게 코드를 작성할 수 있다.
 ***
 
 ## 문제
