@@ -1033,6 +1033,243 @@ void input() {
 조건을 제대로 읽고 차분히 풀어야 하는 문제
 ***
 
+## 톱니바퀴
+> https://www.acmicpc.net/problem/14891
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+#include <cstdio>
+#include <cstring>
+
+int K;
+char wheel[4][9];
+
+bool rotated[4];
+void rotate(int num, int dir);
+
+int main() {
+	for (int i = 0; i < 4; ++i) {
+		scanf("%s", wheel[i]);
+	}
+	scanf("%d", &K);
+
+	while (K--) {
+		int num, dir;
+		scanf("%d %d", &num, &dir);
+		--num;
+		memset(rotated, false, sizeof(rotated));
+		rotate(num, dir);
+	}
+
+	int score = 0;
+	if (wheel[0][0] == '1') score += 1;
+	if (wheel[1][0] == '1') score += 2;
+	if (wheel[2][0] == '1') score += 4;
+	if (wheel[3][0] == '1') score += 8;
+	printf("%d", score);
+	return 0;
+}
+
+void rotate(int num, int dir) {
+	rotated[num] = true;
+	char tmp;
+	int l = num - 1, r = num + 1;
+
+	if (0 <= l && wheel[l][2] != wheel[num][6] && !rotated[l]) {
+		rotate(l, dir * -1);
+	}
+	if (r < 4 && wheel[num][2] != wheel[r][6] && !rotated[r]) {
+		rotate(r, dir * -1);
+	}
+
+	if (dir == 1) {
+		tmp = wheel[num][7];
+		for (int i = 6; i >= 0; --i) {
+			wheel[num][i + 1] = wheel[num][i];
+		}
+		wheel[num][0] = tmp;
+	}
+	else {
+		tmp = wheel[num][0];
+		for (int i = 0; i <= 6; ++i) {
+			wheel[num][i] = wheel[num][i + 1];
+		}
+		wheel[num][7] = tmp;
+	}
+}
+```
+</details>
+
+***
+### 설명
+**코드 순서 주의하기**
+
+톱니바퀴 돌리기 전에 재귀호출을 먼저 해야 한다!!
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
+## 문제
+> 링크
+***
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+***
+### 설명
+
+***
+
 ## 문제
 > 링크
 ***
