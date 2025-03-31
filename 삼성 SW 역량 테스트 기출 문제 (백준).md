@@ -913,20 +913,124 @@ void input() {
 2. 기저사례에서 점수 차 계산하는 문제.
 ***
 
-## 문제
-> 링크
+## 14890. 경사로
+> https://www.acmicpc.net/problem/14890
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+
+int N, L, board[100][100];
+void input();
+
+bool calc_row(int y);
+bool calc_col(int x);
+
+int main() {
+	input();
+	int ret = 0;
+	for (int i = 0; i < N; ++i) {
+		if (calc_col(i)) {
+			++ret;
+		}
+		if (calc_row(i)) {
+			++ret;
+		}
+	}
+	printf("%d", ret);
+	return 0;
+}
+
+bool calc_row(int y) {
+	int range = -1;
+	for (int x = 0; x < N - 1; ++x) {
+		int lx, rx;
+		if (board[y][x] == board[y][x + 1]) {
+			continue;
+		}
+		else if (board[y][x] + 1 == board[y][x + 1]) {
+			lx = x - L + 1;
+			rx = x;
+			if (lx <= range) return false;
+		}
+		else if (board[y][x] == board[y][x + 1] + 1) {
+			lx = x + 1;
+			rx = x + L;
+			if (rx >= N) return false;
+		}
+		else {
+			return false;
+		}
+		bool same_h = true;
+		for (int i = lx; i < rx; ++i) {
+			if (board[y][i] != board[y][i + 1]) {
+				same_h = false;
+				break;
+			}
+		}
+		if (same_h) {
+			range = rx;
+		}
+		else {
+			return false;
+		}
+	}
+	return true;
+}
+bool calc_col(int x) {
+	int range = -1;
+	int ly, ry;
+	for (int y = 0; y < N - 1; ++y) {
+		if (board[y][x] == board[y + 1][x]) {
+			continue;
+		}
+		else if (board[y][x] + 1 == board[y + 1][x]) {
+			ly = y - L + 1;
+			ry = y;
+			if (ly <= range) return false;
+		}
+		else if (board[y][x] == board[y + 1][x] + 1) {
+			ly = y + 1;
+			ry = y + L;
+			if (ry >= N) return false;
+		}
+		else {
+			return false;
+		}
+		bool same_h = true;
+		for (int i = ly; i < ry; ++i) {
+			if (board[i][x] != board[i + 1][x]) {
+				same_h = false;
+				break;
+			}
+		}
+		if (same_h) {
+			range = ry;
+		}
+		else {
+			return false;
+		}
+	}
+	return true;
+}
+
+void input() {
+	scanf("%d %d", &N, &L);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			scanf("%d", &board[i][j]);
+		}
+	}
+}
 ```
 </details>
 
 ***
 ### 설명
-
+조건을 제대로 읽고 차분히 풀어야 하는 문제
 ***
 
 ## 문제
