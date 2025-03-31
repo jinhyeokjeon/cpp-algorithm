@@ -593,20 +593,100 @@ void input() {
 N값이 최대 15이므로, 모든 경우를 다 세어도 2^15(약 32000) 밖에 되지 않는다.
 ***
 
-## 문제
-> 링크
+## 연구소
+> https://www.acmicpc.net/problem/14502
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+struct Pos {
+  int y, x;
+};
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
+Pos white[64];
+int N, M, w_num;
+char board[8][8];
+void input();
+
+int ret;
+void solve(int w, int idx); // white[w ~ w_num - 1] 까지 3 - idx 선택해서 최대 영역 계산
+
+int main() {
+  input();
+  solve(0, 3);
+  printf("%d", ret);
+  return 0;
+}
+
+bool discovered[8][8];
+int calc() {
+  memset(discovered, false, sizeof(discovered));
+  queue<Pos> q;
+
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < M; ++x) {
+      if (board[y][x] == 2) {
+        q.push({ y, x });
+        discovered[y][x] = true;
+      }
+    }
+  }
+
+  int virus = 0;
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    for (int d = 0; d < 4; ++d) {
+      int yy = here.y + dy[d], xx = here.x + dx[d];
+      if (yy < 0 || yy >= N || xx < 0 || xx >= M) continue;
+      if (discovered[yy][xx] || board[yy][xx] != 0) continue;
+      discovered[yy][xx] = true;
+      q.push({ yy, xx });
+      ++virus;
+    }
+  }
+
+  return w_num - 3 - virus;
+}
+
+void solve(int w, int num) {
+  if (num == 0) {
+    ret = max(ret, calc());
+    return;
+  }
+  for (int here = w; here <= w_num - num; ++here) {
+    board[white[here].y][white[here].x] = 1;
+    solve(here + 1, num - 1);
+    board[white[here].y][white[here].x] = 0;
+  }
+}
+
+void input() {
+  scanf("%d %d", &N, &M);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < M; ++j) {
+      scanf("%hhd", &board[i][j]);
+      if (board[i][j] == 0) {
+        white[w_num++] = { i, j };
+      }
+    }
+  }
+}
 ```
 </details>
 
 ***
 ### 설명
-
+1. dfs로 빈칸 선택
+2. bfs로 바이러스 확산
 ***
 
 ## 문제
