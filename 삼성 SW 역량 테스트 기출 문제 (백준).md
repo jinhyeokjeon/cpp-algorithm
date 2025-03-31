@@ -840,20 +840,77 @@ void input() {
 dfs로 연산자 선택하는 문제.
 ***
 
-## 문제
-> 링크
+## 14889. 스타트와 링크
+> https://www.acmicpc.net/problem/14889
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+int N;
+int score[20][20];
+void input();
+
+bool chosed[20];
+int ret = 987654321;
+void dfs(int idx, int num);
+
+int main() {
+	input();
+	dfs(0, N / 2);
+	printf("%d", ret);
+	return 0;
+}
+
+void calc() {
+	int A[10], B[10], a = 0, b = 0;
+	for (int i = 0; i < N; ++i) {
+		if (chosed[i]) A[a++] = i;
+		else B[b++] = i;
+	}
+
+	int score_a = 0, score_b = 0;
+	for (int i = 0; i < N / 2; ++i) {
+		for (int j = 0; j < N / 2; ++j) {
+			score_a += score[A[i]][A[j]];
+			score_b += score[B[i]][B[j]];
+		}
+	}
+
+	ret = min(ret, (score_a > score_b ? score_a - score_b : score_b - score_a));
+}
+
+void dfs(int idx, int num) {
+	if (num == 0) {
+		calc();
+		return;
+	}
+	for (int here = idx; here <= N - 1 - num; ++here) {
+		chosed[here] = true;
+		dfs(here + 1, num - 1);
+		chosed[here] = false;
+	}
+}
+
+void input() {
+	scanf("%d", &N);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			scanf("%d", &score[i][j]);
+		}
+	}
+}
 ```
 </details>
 
 ***
 ### 설명
-
+1. dfs로 팀 선택.
+2. 기저사례에서 점수 차 계산하는 문제.
 ***
 
 ## 문제
