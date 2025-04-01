@@ -1,7 +1,7 @@
 # 삼성 SW 역량 테스트 기출 문제 (백준)
 ## 13460. 구슬 탈출 2
 > https://www.acmicpc.net/problem/13460
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -108,7 +108,6 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. red와 blue 값을 매개변수로 넘기지 않고, 보드를 기울이기 전에 red와 blue 값을 저장해두면 전역변수로 사용할 수 있다. 
 
@@ -116,11 +115,12 @@ void input() {
 2. 보드를 같은 방향으로 연속해서 두 번 이상 기울이는건 의미 없다. 
 
    => 가지치기.
+
 ***
 
 ## 12100. 2048 (Easy)
 > https://www.acmicpc.net/problem/12100
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -218,16 +218,16 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. 가장 큰 블록만을 출력하면 되는 문제이므로, 보드를 회전하여도 상관 없다. 따라서 보드를 회전시키며 블록을 이동하면, 한 쪽 방향으로 이동하는 부분만 구현하면 된다.
 2. Info 값을 매개변수로 넘기는게 아니라, 전역변수로 설정하고 재귀호출 전에 미리 저장해놓는 방식으로 구현하면 코드가 훨씬 깔끔해진다.
 3. 보드를 Info struct 에 집어넣고, 보드의 회전, 블록의 이동, 가장 큰 블록 구하기 연산을 구조체 함수로 구현하면 코드가 깔끔하다.
+
 ***
 
 ## 3190. 뱀
 > https://www.acmicpc.net/problem/3190
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -299,14 +299,14 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 deque 활용 문제
+
 ***
 
 ## 13458: 시험 감독
 > https://www.acmicpc.net/problem/13458
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -338,15 +338,15 @@ int main() {
 ```
 </details>
 
-***
 ### 설명
 1. int형 범위를 벗어날 가능성이 있다면 long long 자료형을 사용하기.
 2. A를 B로 나눈 후 올림한 값 => (A + B - 1) / B;
+
 ***
 
 ## 14499. 주사위 굴리기 
 > https://www.acmicpc.net/problem/14499
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -425,17 +425,17 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. 주석을 잘 활용하자.
 2. char 변수는 scanf에서는 %hhd, printf에서는 %d 사용한다.
 3. unsigned char 변수는 scanf 에서는 %hhu, printf에서는 %u 사용한다.
 4. unsigned int 변수는 scanf 에서는 %u, printf에서는 %u 사용한다.
+
 ***
 
 ## 14500: 테트로미노
 > https://www.acmicpc.net/problem/14500
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -539,14 +539,14 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 vector<T> 대상으로 emplace_back() 연산을 하면, T() 가 vector의 맨 뒤로 삽입된다. 이를 이용하여 필요할 때마다 vector의 크기를 늘릴 수 있다.
+
 ***
 
 ## 14501: 퇴사
 > https://www.acmicpc.net/problem/14501
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -588,14 +588,14 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 N값이 최대 15이므로, 모든 경우를 다 세어도 2^15(약 32000) 밖에 되지 않는다.
+
 ***
 
 ## 14502. 연구소
 > https://www.acmicpc.net/problem/14502
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -683,15 +683,15 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. dfs로 빈칸 선택
 2. bfs로 바이러스 확산
+
 ***
 
 ## 14503. 로봇 청소기
 > https://www.acmicpc.net/problem/14503
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -755,18 +755,18 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 d = {0(북), 1(동), 2(남), 3(서)}
 1. 시계방향 회전 : d = (d + 1) % 4;
 2. 반시계방향 회전 : d = (d - 1 + 4) / d = (d + 3) % 4
 3. d 방향으로 전진 : y += dy[d], x += dx[d];
 4. d 방향으로 후진 : y -= dy[d], x -= dx[d];
+
 ***
 
 ## 14888. 연산자 끼워넣기
 > https://www.acmicpc.net/problem/14888
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -835,14 +835,14 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 dfs로 연산자 선택하는 문제.
+
 ***
 
 ## 14889. 스타트와 링크
 > https://www.acmicpc.net/problem/14889
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -907,15 +907,15 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. dfs로 팀 선택.
 2. 기저사례에서 점수 차 계산하는 문제.
+
 ***
 
 ## 14890. 경사로
 > https://www.acmicpc.net/problem/14890
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1028,14 +1028,14 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 조건을 제대로 읽고 차분히 풀어야 하는 문제
+
 ***
 
 ## 14891. 톱니바퀴
 > https://www.acmicpc.net/problem/14891
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1103,16 +1103,16 @@ void rotate(int num, int dir) {
 ```
 </details>
 
-***
 ### 설명
 **코드 순서 주의하기**
 
 톱니바퀴 돌리기 전에 재귀호출을 먼저 해야 한다!!
+
 ***
 
 ## 15683. 감시
 > https://www.acmicpc.net/problem/15683
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1214,14 +1214,14 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 dfs 함수 내부에서 board에 연산을 하기 전에, board 값을 미리 저장해두고 다음 연산 이전에 복원하는 방식을 사용하면 깔끔하게 코드를 작성할 수 있다.
+
 ***
 
 ## 15684. 사다리 조작
 > https://www.acmicpc.net/problem/15684
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1304,7 +1304,6 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. 좌 / 우 또는 상 / 하 의 범위를 확인해야 하는 문제는 인덱스를 1부터 저장하면, 범위를 넘어가는 예외를 간단히 처리할 수 있다.
    
@@ -1320,7 +1319,7 @@ void input() {
 
 ## 15685: 드래곤 커브
 > https://www.acmicpc.net/problem/15685
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1380,16 +1379,16 @@ void make_dragon(int y, int x, int g) {
 ```
 </details>
 
-***
 ### 설명
 0 <= x, y <= 100 이다. 즉 2차원 배열의 크기는 **101 x 101** 로 해야 한다.
 
 변수 범위를 항상 꼼꼼이 체크해야 한다.
+
 ***
 
 ## 15686. 치킨 배달
 > https://www.acmicpc.net/problem/15686
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1474,17 +1473,17 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 1. dfs로 치킨 집을 선택
 2. bfs로 치킨 거리 계산
    2.1. 간선의 가중치가 없을 때의 최단거리는 bfs로 구할 수 있다.
    2.2. 시작 지점이 여러곳인 경우, 해당 시작 지점들을 모두 큐에 넣은 후 bfs를 수행하면 된다.
+
 ***
 
-## 문제
-> 링크
-***
+## 5373. 큐빙
+> https://www.acmicpc.net/problem/5373
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1493,14 +1492,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1509,14 +1507,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1525,14 +1522,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1541,14 +1537,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1557,14 +1552,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1573,14 +1567,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1589,14 +1582,13 @@ void input() {
 ```
 </details>
 
-***
 ### 설명
 
 ***
 
 ## 문제
 > 링크
-***
+
 ### 코드
 <details>
 <summary>C++</summary>
@@ -1605,7 +1597,111 @@ void input() {
 ```
 </details>
 
+### 설명
+
 ***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
 ### 설명
 
 ***
