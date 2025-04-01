@@ -1819,20 +1819,139 @@ void input() {
 
 ### 설명
 bfs 문제.
+
 ***
 
-## 문제
-> 링크
+## 16235. 나무 재테크
+> https://www.acmicpc.net/problem/16235
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <list>
+using namespace std;
+
+struct Tree {
+  int age, cnt;
+};
+int N, M, K, A[10][10], food[10][10];
+list<Tree> trees[10][10];
+void input();
+
+void calc1(int y, int x);
+void calc2(int y, int x);
+
+int main() {
+  input();
+  for (int year = 0; year < K; ++year) {
+    // spring && summer
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < N; ++x) {
+        calc1(y, x);
+      }
+    }
+    // fall
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < N; ++x) {
+        calc2(y, x);
+      }
+    }
+    // winter
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < N; ++x) {
+        food[y][x] += A[y][x];
+      }
+    }
+  }
+
+  int sum = 0;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      for (Tree& t : trees[y][x]) {
+        sum += t.cnt;
+      }
+    }
+  }
+  printf("%d", sum);
+
+  return 0;
+}
+
+void calc2(int y, int x) {
+  list<Tree>& t = trees[y][x];
+  for (Tree& tree : t) {
+    if (tree.age % 5 != 0) continue;
+    for (int dy = -1; dy <= 1; ++dy) {
+      for (int dx = -1; dx <= 1; ++dx) {
+        if (dy == 0 && dx == 0) continue;
+        int yy = y + dy, xx = x + dx;
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+        if (!trees[yy][xx].empty() && trees[yy][xx].front().age == 1) {
+          trees[yy][xx].front().cnt += tree.cnt;
+        }
+        else {
+          trees[yy][xx].push_front({ 1, tree.cnt });
+        }
+      }
+    }
+  }
+}
+
+void calc1(int y, int x) {
+  list<Tree>& t = trees[y][x];
+  for (auto it = t.begin(); it != t.end(); ++it) {
+    if (it->age * it->cnt <= food[y][x]) {
+      food[y][x] -= it->age * it->cnt;
+      ++it->age;
+    }
+    else {
+      int eat_num = food[y][x] / it->age;
+      int dead_num = it->cnt - eat_num;
+      // 양분 먹기 && 죽은 나무 양분되기
+      if (eat_num) {
+        food[y][x] -= it->age * eat_num;
+        food[y][x] += (it->age / 2) * dead_num;
+        ++(it->age);
+        it->cnt = eat_num;
+        ++it;
+      }
+      while (it != t.end()) {
+        food[y][x] += (it->age / 2) * it->cnt;
+        it = t.erase(it);
+      }
+      break;
+    }
+  }
+}
+
+void input() {
+  scanf("%d %d %d", &N, &M, &K);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &A[i][j]);
+    }
+  }
+  while (M--) {
+    int y, x, age;
+    scanf("%d %d %d", &y, &x, &age);
+    trees[y - 1][x - 1].push_front({ age, 1 });
+  }
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      food[i][j] = 5;
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+1. 리스트 활용 문제.
+2. 자료구조 설계 문제.
+   같은 위치에서 같은 나이의 나무들이 다수 생성될 가능성이 있으므로, {나무의 나이, 나무의 개수} 라는 자료구조를 만들면 시간 및 공간복잡도를 줄일 수 있다.
 
 ***
 
