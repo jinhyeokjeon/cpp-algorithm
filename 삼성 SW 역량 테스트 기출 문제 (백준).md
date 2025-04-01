@@ -1219,19 +1219,102 @@ void input() {
 dfs 함수 내부에서 board에 연산을 하기 전에, board 값을 미리 저장해두고 다음 연산 이전에 복원하는 방식을 사용하면 깔끔하게 코드를 작성할 수 있다.
 ***
 
-## 문제
-> 링크
+## 사다리 조작
+> https://www.acmicpc.net/problem/15684
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+int N, M, H, nums[11];
+bool hori[31][11];
+void input();
+
+int ret = 4;
+bool dfs(int cnt, int y, int x);
+
+int main() {
+  input();
+  for (int num = 0; num <= 3; ++num) {
+    if (dfs(num, 1, 1)) {
+      printf("%d", num);
+      return 0;
+    }
+  }
+  printf("-1");
+  return 0;
+}
+
+bool calc() {
+  for (int x = 1; x <= N; ++x) {
+    nums[x] = x;
+  }
+
+  for (int x = 1; x <= N - 1; ++x) {
+    int xx = x;
+    for (int y = 1; y <= H; ++y) {
+      if (hori[y][xx - 1]) {
+        --xx;
+      }
+      else if (hori[y][xx]) {
+        ++xx;
+      }
+    }
+    if (x != xx) return false;
+  }
+
+  return true;
+}
+
+bool dfs(int num, int y, int x) {
+  if (num == 0) {
+    return calc();
+  }
+
+  for (int xx = x; xx <= N - 1; ++xx) {
+    if (hori[y][xx - 1] || hori[y][xx] || hori[y][xx + 1]) continue;
+    hori[y][xx] = true;
+    if (dfs(num - 1, y, xx)) return true;
+    hori[y][xx] = false;
+  }
+
+  for (int yy = y + 1; yy <= H; ++yy) {
+    for (int xx = 1; xx <= N - 1; ++xx) {
+      if (hori[yy][xx - 1] || hori[yy][xx] || hori[yy][xx + 1]) continue;
+      hori[yy][xx] = true;
+      if (dfs(num - 1, yy, xx + 1)) return true;
+      hori[yy][xx] = false;
+    }
+  }
+  return false;
+}
+
+void input() {
+  scanf("%d %d %d", &N, &M, &H);
+  while (M--) {
+    int a, b;
+    scanf("%d %d", &a, &b);
+    hori[a][b] = true;
+  }
+}
 ```
 </details>
 
 ***
 ### 설명
+1. 좌 / 우 또는 상 / 하 의 범위를 확인해야 하는 문제는 인덱스를 1부터 저장하면, 범위를 넘어가는 예외를 간단히 처리할 수 있다.
+   
+   이 문제에서는 hori 배열의 인덱스를 1부터 저장함으로써, 좌 / 우를 확인할 때 범위를 확인하지 않도록 할 수 있다. 
+
+2. 2차원 배열 위에서 dfs를 할 때, (y, x) 값부터 탐색을 하도록 행과 열 값을 입력받도록 하면 순서만 다를 뿐 같은 경우의 수를 중복해서 세지 않을 수 있다.
+
+   NxM board 위에서 dfs를 수행한다고 가정하자.
+   
+   dfs(y, x) 내부에서 board[y][x ~ M - 1] 탐색 이후, board[y + 1 ~ N - 1][0 ~ M - 1] 을 탐색하도록 구현할 수 있다.
 
 ***
 
