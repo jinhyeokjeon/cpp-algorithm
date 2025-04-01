@@ -1387,20 +1387,99 @@ void make_dragon(int y, int x, int g) {
 변수 범위를 항상 꼼꼼이 체크해야 한다.
 ***
 
-## 문제
-> 링크
+## 15686. 치킨 배달
+> https://www.acmicpc.net/problem/15686
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+using namespace std;
+
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+struct Pos {
+	int y, x;
+};
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
+int N, M, c_num;
+Pos chicken[13];
+char board[50][50];
+void input();
+
+int chosed[13], ret = 987654321;
+void dfs(int idx, int from, int num);
+
+int main() {
+	input();
+	dfs(0, 0, M);
+	printf("%d", ret);
+	return 0;
+}
+
+int dist[50][50];
+void calc() {
+	memset(dist, -1, sizeof(dist));
+	queue<Pos> q;
+	for (int i = 0; i < M; ++i) {
+		Pos& p = chicken[chosed[i]];
+		q.push(p);
+		dist[p.y][p.x] = 0;
+	}
+
+	int sum = 0;
+	while (!q.empty()) {
+		Pos here = q.front(); q.pop();
+		if (board[here.y][here.x] == 1) {
+			sum += dist[here.y][here.x];
+		}
+		for (int d = 0; d < 4; ++d) {
+			int yy = here.y + dy[d], xx = here.x + dx[d];
+			if (yy < 0 || yy >= N || xx < 0 || xx >= N || dist[yy][xx] != -1) continue;
+			dist[yy][xx] = dist[here.y][here.x] + 1;
+			q.push({ yy, xx });
+		}
+	}
+
+	ret = min(ret, sum);
+}
+
+void dfs(int idx, int from, int num) {
+	if (num == 0) {
+		calc();
+		return;
+	}
+	for (int here = from; here <= c_num - num; ++here) {
+		chosed[idx] = here;
+		dfs(idx + 1, here + 1, num - 1);
+	}
+}
+
+void input() {
+	scanf("%d %d", &N, &M);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			scanf("%hhd", &board[i][j]);
+			if (board[i][j] == 2) {
+				chicken[c_num++] = { i, j };
+			}
+		}
+	}
+}
 ```
 </details>
 
 ***
 ### 설명
-
+1. dfs로 치킨 집을 선택
+2. bfs로 치킨 거리 계산
+   2.1. 간선의 가중치가 없을 때의 최단거리는 bfs로 구할 수 있다.
+   2.2. 시작 지점이 여러곳인 경우, 해당 시작 지점들을 모두 큐에 넣은 후 bfs를 수행하면 된다.
 ***
 
 ## 문제
