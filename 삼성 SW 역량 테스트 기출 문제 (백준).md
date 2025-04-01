@@ -1489,11 +1489,232 @@ void input() {
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+enum Face { U, D, F, R, B, L };
+struct Pos {
+	int f, y, x;
+};
+
+char dice[6][3][3], tmp[6][3][3];
+Pos to[6][2][6][3][3]; // to[f2][d][f][y][x] : f면 y, x 를 f2면 d방향 회전시 이동 좌표
+
+void init();
+void reset_dice();
+
+void rotate(char f, char d);
+
+int main() {
+	init();
+	int T, n;
+	char f, d;
+	scanf("%d", &T);
+	while (T--) {
+		scanf("%d", &n);
+		getchar();
+		reset_dice();
+		while (n--) {
+			scanf("%c%c", &f, &d);
+			getchar();
+			rotate(f, d);
+		}
+		for (int y = 0; y < 3; ++y) {
+			for (int x = 0; x < 3; ++x) {
+				printf("%c", dice[U][y][x]);
+			}
+			printf("\n");
+		}
+	}
+	return 0;
+}
+
+void rotate(char f, char d) {
+	int face;
+	if (f == 'U') face = 0;
+	else if (f == 'D') face = 1;
+	else if (f == 'F') face = 2;
+	else if (f == 'R') face = 3;
+	else if (f == 'B') face = 4;
+	else if (f == 'L') face = 5;
+
+	int dir = (d == '+' ? 0 : 1);
+
+	for (int f = 0; f < 6; ++f) {
+		for (int y = 0; y < 3; ++y) {
+			for (int x = 0; x < 3; ++x) {
+				Pos& p = to[face][dir][f][y][x];
+				tmp[p.f][p.y][p.x] = dice[f][y][x];
+			}
+		}
+	}
+
+	memcpy(dice, tmp, sizeof(dice));
+}
+
+void reset_dice() {
+	for (int f = 0; f < 6; ++f) {
+		memset(dice[f], "wyrbog"[f], 9);
+	}
+}
+
+void init() {
+	// 0. 먼저 모두 자기 자신으로 가도록
+	for (int f = 0; f < 6; ++f) {
+		for (int dir = 0; dir < 2; ++dir) {
+			for (int ff = 0; ff < 6; ++ff) {
+				for (int y = 0; y < 3; ++y) {
+					for (int x = 0; x < 3; ++x) {
+						to[f][dir][ff][y][x] = { ff, y, x };
+					}
+				}
+			}
+		}
+	}
+	// 1. U면
+	for (int i = 0; i < 3; ++i) {
+		to[U][0][F][0][i] = { L, 0, i };
+		to[U][1][F][0][i] = { R, 0, i };
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[U][0][L][0][i] = { B, 0, i };
+		to[U][1][L][0][i] = { F, 0, i };
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[U][0][B][0][i] = { R, 0, i };
+		to[U][1][B][0][i] = { L, 0, i };
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[U][0][R][0][i] = { F, 0, i };
+		to[U][1][R][0][i] = { B, 0, i };
+	}
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 3; ++x) {
+			to[U][0][U][y][x] = { U, x, 2 - y };
+			to[U][1][U][y][x] = { U, 2 - x, y };
+		}
+	}
+	// 2. D면 (위에서 볼 땐 반대로 회전)
+	for (int i = 0; i < 3; ++i) {
+		to[D][1][F][2][i] = { L, 2, i };
+		to[D][0][F][2][i] = { R, 2, i };
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[D][1][L][2][i] = { B, 2, i };
+		to[D][0][L][2][i] = { F, 2, i };
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[D][1][B][2][i] = { R, 2, i };
+		to[D][0][B][2][i] = { L, 2, i };
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[D][1][R][2][i] = { F, 2, i };
+		to[D][0][R][2][i] = { B, 2, i };
+	}
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 3; ++x) {
+			to[D][1][D][y][x] = { D, x, 2 - y };
+			to[D][0][D][y][x] = { D, 2 - x, y };
+		}
+	}
+	// 3. F면
+	for (int i = 0; i < 3; ++i) {
+		to[F][0][U][2][i] = {R, i, 0};
+		to[F][1][U][2][i] = {L, 2 - i, 2};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[F][0][R][i][0] = {D, 2, 2 - i};
+		to[F][1][R][i][0] = {U, 2, i};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[F][0][D][2][i] = {L, i, 2};
+		to[F][1][D][2][i] = {R, 2 - i, 0};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[F][0][L][i][2] = {U, 2, 2 - i};
+		to[F][1][L][i][2] = {D, 2, i};
+	}
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 3; ++x) {
+			to[F][0][F][y][x] = { F, x, 2 - y };
+			to[F][1][F][y][x] = { F, 2 - x, y };
+		}
+	}
+	// 4. R면
+	for (int i = 0; i < 3; ++i) {
+		to[R][0][U][i][2] = {B, 2 - i, 0};
+		to[R][1][U][i][2] = {F, i, 2};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[R][0][B][i][0] = {D, i, 2};
+		to[R][1][B][i][0] = {U, 2 - i, 2};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[R][0][D][i][2] = {F, 2 - i, 2};
+		to[R][1][D][i][2] = {B, i, 0};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[R][0][F][i][2] = {U, i, 2};
+		to[R][1][F][i][2] = {D, 2 - i, 2};
+	}
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 3; ++x) {
+			to[R][0][R][y][x] = { R, x, 2 - y };
+			to[R][1][R][y][x] = { R, 2 - x, y };
+		}
+	}
+	// 4. B면
+	for (int i = 0; i < 3; ++i) {
+		to[B][0][U][0][i] = {L, 2 - i, 0};
+		to[B][1][U][0][i] = {R, i, 2};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[B][0][L][i][0] = {D, 0, i};
+		to[B][1][L][i][0] = {U, 0, 2 - i};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[B][0][D][0][i] = {R, 2 - i, 2};
+		to[B][1][D][0][i] = {L, i, 0};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[B][0][R][i][2] = {U, 0, i};
+		to[B][1][R][i][2] = {D, 0 , 2 - i};
+	}
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 3; ++x) {
+			to[B][0][B][y][x] = { B, x, 2 - y };
+			to[B][1][B][y][x] = { B, 2 - x, y };
+		}
+	}
+	// 3. L면
+	for (int i = 0; i < 3; ++i) {
+		to[L][0][U][i][0] = {F, i, 0};
+		to[L][1][U][i][0] = {B, 2 - i, 2};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[L][0][F][i][0] = {D, 2 - i, 0};
+		to[L][1][F][i][0] = {U, i, 0};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[L][0][D][i][0] = {B, i, 2};
+		to[L][1][D][i][0] = {F, 2 - i, 0};
+	}
+	for (int i = 0; i < 3; ++i) {
+		to[L][0][B][i][2] = {U, 2 - i, 0};
+		to[L][1][B][i][2] = {D, i, 0};
+	}
+	for (int y = 0; y < 3; ++y) {
+		for (int x = 0; x < 3; ++x) {
+			to[L][0][L][y][x] = { L, x, 2 - y };
+			to[L][1][L][y][x] = { L, 2 - x, y };
+		}
+	}
+}
 ```
 </details>
 
 ### 설명
-
+enum Face { U, D, F, R, B, L }; 을 사용하면 덜 헷갈리게 코드 작성 가능하다.
 ***
 
 ## 문제
