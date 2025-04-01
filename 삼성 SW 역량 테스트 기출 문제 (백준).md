@@ -1952,21 +1952,115 @@ void input() {
 1. 리스트 활용 문제.
 2. 자료구조 설계 문제.
    같은 위치에서 같은 나이의 나무들이 다수 생성될 가능성이 있으므로, {나무의 나이, 나무의 개수} 라는 자료구조를 만들면 시간 및 공간복잡도를 줄일 수 있다.
+3. main 을 너무 단순하게 하려 하다보면 함수 크기가 너무 커져 헷갈려진다. 
+   main 과 서브 루틴 함수의 사이즈를 적당히 조절하자.
 
 ***
 
-## 문제
-> 링크
+## 아기 상어
+> https://www.acmicpc.net/problem/16236
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+struct Pos {
+  int y, x;
+};
+Pos s_pos;
+int s_size, s_cnt;
+
+int N, board[20][20];
+void input();
+
+int dist[20][20], min_dist;
+bool can_eat();
+int eat_move();
+
+int main() {
+  input();
+  int ret = 0;
+
+  while (true) {
+    if (!can_eat()) {
+      break;
+    }
+    ret += eat_move();
+  }
+
+  printf("%d", ret);
+  return 0;
+}
+
+int eat_move() {
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (1 <= board[y][x] && board[y][x] < s_size && dist[y][x] == min_dist) {
+        s_pos = { y, x };
+        board[y][x] = 0;
+        --s_cnt;
+        if (s_cnt == 0) {
+          s_cnt = ++s_size;
+        }
+        return dist[y][x];
+      }
+    }
+  }
+  return -1;
+}
+
+bool can_eat() {
+  memset(dist, -1, sizeof(dist));
+  min_dist = 987654321;
+  queue<Pos> q;
+
+  q.push({ s_pos });
+  dist[s_pos.y][s_pos.x] = 0;
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    if (1 <= board[here.y][here.x] && board[here.y][here.x] < s_size) {
+      min_dist = min(min_dist, dist[here.y][here.x]);
+    }
+    for (int d = 0; d < 4; ++d) {
+      int yy = here.y + dy[d], xx = here.x + dx[d];
+      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+      if (dist[yy][xx] != -1 || board[yy][xx] > s_size) continue;
+      dist[yy][xx] = dist[here.y][here.x] + 1;
+      q.push({ yy, xx });
+    }
+  }
+
+  return min_dist != 987654321;
+}
+
+void input() {
+  scanf("%d", &N);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &board[i][j]);
+      if (board[i][j] == 9) {
+        s_pos = { i, j };
+        s_size = 2;
+        s_cnt = 2;
+        board[i][j] = 0;
+      }
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+bfs 구현 문제.
 
 ***
 
