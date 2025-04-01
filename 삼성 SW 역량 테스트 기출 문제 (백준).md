@@ -1717,19 +1717,108 @@ void init() {
 enum Face { U, D, F, R, B, L }; 을 사용하면 덜 헷갈리게 코드 작성 가능하다.
 ***
 
-## 문제
-> 링크
+## 16234. 인구 이동
+> https://www.acmicpc.net/problem/16234
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <vector>
+using namespace std;
+
+struct Pos {
+	int y, x;
+};
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+int N, L, R, board[50][50];
+void input();
+
+bool discovered[50][50];
+bool move();
+
+int main() {
+	input();
+
+	for(int day = 0; ; ++day) {
+		if (!move()) {
+			printf("%d", day);
+			break;
+		}
+	}
+
+	return 0;
+}
+
+bool can_move(Pos a, Pos b) {
+	int gap = board[a.y][a.x] - board[b.y][b.x];
+	if (gap < 0) gap *= -1;
+	return L <= gap && gap <= R;
+}
+
+int bfs(int y, int x, vector<Pos>& v) {
+	queue<Pos> q;
+	q.push({ y, x });
+	discovered[y][x] = true;
+
+	int sum = 0;
+
+	while (!q.empty()) {
+		Pos here = q.front(); q.pop();
+		sum += board[here.y][here.x];
+		v.push_back(here);
+		for (int d = 0; d < 4; ++d) {
+			int yy = here.y + dy[d], xx = here.x + dx[d];
+			if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+			if(discovered[yy][xx] || !can_move(here, {yy, xx})) continue;
+			q.push({ yy, xx });
+			discovered[yy][xx] = true;
+		}
+	}
+
+	return sum;
+}
+
+bool move() {
+	memset(discovered, false, sizeof(discovered));
+	bool check = false;
+
+	for (int y = 0; y < N; ++y) {
+		for (int x = 0; x < N; ++x) {
+			if (discovered[y][x]) continue;
+			vector<Pos> v;
+			int sum = bfs(y, x, v);
+			if (v.size() > 1) {
+				check = true;
+				sum /= v.size();
+				for (Pos& p : v) {
+					board[p.y][p.x] = sum;
+				}
+			}
+		}
+	}
+
+	return check;
+}
+
+void input() {
+	scanf("%d %d %d", &N, &L, &R);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			scanf("%d", &board[i][j]);
+		}
+	}
+}
 ```
 </details>
 
 ### 설명
-
+bfs 문제.
 ***
 
 ## 문제
