@@ -1219,7 +1219,7 @@ void input() {
 dfs 함수 내부에서 board에 연산을 하기 전에, board 값을 미리 저장해두고 다음 연산 이전에 복원하는 방식을 사용하면 깔끔하게 코드를 작성할 수 있다.
 ***
 
-## 사다리 조작
+## 15684. 사다리 조작
 > https://www.acmicpc.net/problem/15684
 ***
 ### 코드
@@ -1318,20 +1318,73 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 15685: 드래곤 커브
+> https://www.acmicpc.net/problem/15685
 ***
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <vector>
+using namespace std;
+
+const int dy[4] = { 0, -1, 0, 1 }, dx[4] = { 1, 0, -1, 0 };
+int N, ret;
+bool exist[101][101];
+vector<int> dragon;
+
+void make_dragon(int y, int x, int g);
+void count_square();
+
+int main() {
+	scanf("%d", &N);
+	while (N--) {
+		int x, y, d, g;
+		scanf("%d %d %d %d", &x, &y, &d, &g);
+
+		dragon.clear();
+		
+		dragon.push_back(d);
+		exist[y][x] = exist[y + dy[d]][x + dx[d]] = true;
+		make_dragon(y + dy[d], x + dx[d], g);
+	}
+	count_square();
+	printf("%d", ret);
+	return 0;
+}
+
+void count_square() {
+	for (int y = 0; y <= 99; ++y) {
+		for (int x = 0; x <= 99; ++x) {
+			if (exist[y][x] && exist[y][x + 1] && exist[y + 1][x] && exist[y + 1][x + 1]) {
+				++ret;
+			}
+		}
+	}
+}
+
+void make_dragon(int y, int x, int g) {
+	if (g == 0) return;
+	for (int i = dragon.size() - 1; i >= 0; --i) {
+		int d = (dragon[i] + 2) % 4;
+		d = (d + 3) % 4;
+		y += dy[d]; x += dx[d];
+		exist[y][x] = true;
+		dragon.push_back(d);
+	}
+	make_dragon(y, x, g - 1);
+}
 ```
 </details>
 
 ***
 ### 설명
+0 <= x, y <= 100 이다. 즉 2차원 배열의 크기는 **101 x 101** 로 해야 한다.
 
+변수 범위를 항상 꼼꼼이 체크해야 한다.
 ***
 
 ## 문제
