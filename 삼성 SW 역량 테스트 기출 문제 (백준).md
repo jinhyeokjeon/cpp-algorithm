@@ -2466,20 +2466,116 @@ void input() {
 ### 설명
 1. 쉬운 구현 문제
 2. 반복문을 돌리기 전, 최초에 A[r][c] == k 인 경우를 빼먹으면 안된다.
+
 ***
 
-## 문제
-> 링크
+## 17142. 연구소 3
+> https://www.acmicpc.net/problem/17142
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+#define INF 987654321
+
+struct Pos {
+	int y, x;
+};
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
+Pos viruses[2500];
+int N, M, v_num;
+char board[50][50];
+void input();
+
+int chosed[10];
+void dfs(int idx, int from, int num);
+
+int min_time = INF;
+int dist[50][50];
+void calc();
+
+int main() {
+	input();
+	dfs(0, 0, M);
+	printf("%d", (min_time == INF ? -1 : min_time));
+}
+
+void calc() {
+	memset(dist, -1, sizeof(dist));
+	queue<Pos> q;
+	int max_time = 0;
+
+	for (int i = 0; i < M; ++i) {
+		Pos& v = viruses[chosed[i]];
+		q.push(v);
+		dist[v.y][v.x] = 0;
+	}
+
+	while (!q.empty()) {
+		Pos here = q.front(); q.pop();
+
+		for (int d = 0; d < 4; ++d) {
+			int yy = here.y + dy[d], xx = here.x + dx[d];
+			if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+			if (board[yy][xx] == 1 || dist[yy][xx] != -1) continue;
+			dist[yy][xx] = dist[here.y][here.x] + 1;
+			q.push({ yy,xx });
+		}
+	}
+
+	for (int y = 0; y < N; ++y) {
+		for (int x = 0; x < N; ++x) {
+			if (board[y][x] != 0) continue;
+			if (dist[y][x] == -1) {
+				return;
+			}
+			max_time = max(max_time, dist[y][x]);
+		}
+	}
+
+	min_time = min(min_time, max_time);
+}
+
+void dfs(int idx, int from, int num) {
+	if (num == 0) {
+		calc();
+		return;
+	}
+
+	for (int here = from; here <= v_num - num; ++here) {
+		chosed[idx] = here;
+		dfs(idx + 1, here + 1, num - 1);
+	}
+}
+
+void input() {
+	scanf("%d %d", &N, &M);
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			scanf("%hhd", &board[i][j]);
+			if (board[i][j] == 2) {
+				viruses[v_num++] = { i, j };
+			}
+		}
+	}
+}
 ```
 </details>
 
 ### 설명
+1. dfs 로 퍼트릴 바이러스 선택
+
+2. bfs로 바이러스 퍼트리기
+
+3. bfs 시작 지점이 여러개일 경우, 큐에 모두 집어 넣고 시작하면 된다.
 
 ***
 
