@@ -1957,7 +1957,7 @@ void input() {
 
 ***
 
-## 아기 상어
+## 16236. 아기 상어
 > https://www.acmicpc.net/problem/16236
 
 ### 코드
@@ -2064,7 +2064,7 @@ bfs 구현 문제.
 
 ***
 
-## 미세먼지 안녕!
+## 17144. 미세먼지 안녕!
 > https://www.acmicpc.net/problem/17144
 
 ### 코드
@@ -2187,18 +2187,158 @@ board의 기본값이 tmp에 정확히 저장되는지 확인해야 한다.
 여기서는 공기청정기의 위치가 -1로 저장되므로, tmp에도 공기청정기의 위치를 표시해주어야 한다.
 ***
 
-## 문제
-> 링크
+## 17143. 낚시왕
+> https://www.acmicpc.net/problem/17143
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <vector>
+using namespace std;
+
+struct Info {
+	int y, x, d, spd, size;
+	bool eaten;
+};
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, 1, -1 };
+int R, C, M, shark_idx[100][100];
+vector<Info> sharks;
+
+void input();
+
+int catch_shark(int x);
+
+void move_shark(Info& s, int dist);
+
+void eat_shark();
+
+int main() {
+	input();
+	int sum = 0;
+	for (int x = 0; x < C; ++x) {
+		// 1. 상어 잡기
+		sum += catch_shark(x);
+		// 2. 상어 이동
+		for (int i = 0; i < sharks.size(); ++i) {
+			move_shark(sharks[i], sharks[i].spd);
+		}
+		// 3. 상어끼리 잡아먹기
+		eat_shark();
+	}
+	printf("%d", sum);
+	return 0;
+}
+
+void eat_shark() {
+	memset(shark_idx, -1, sizeof(shark_idx));
+	for (int i = 0; i < sharks.size(); ++i) {
+		Info& s = sharks[i];
+		if (s.eaten) continue;
+		if (shark_idx[s.y][s.x] == -1) {
+			shark_idx[s.y][s.x] = i;
+		}
+		else {
+			Info& s0 = sharks[shark_idx[s.y][s.x]];
+			if (s0.size < s.size) {
+				s0.eaten = true;
+				shark_idx[s.y][s.x] = i;
+			}
+			else {
+				s.eaten = true;
+			}
+		}
+	}
+}
+
+void move_shark(Info& s, int dist) {
+	if (s.d <= 1) {
+		int yy = s.y + dy[s.d] * dist;
+		if (0 <= yy && yy < R) {
+			s.y = yy;
+			return;
+		}
+		else if (yy < 0){
+			int moved = s.y;
+			s.y = 0;
+			s.d = 1;
+			move_shark(s, dist - moved);
+		}
+		else {
+			int moved = R - 1 - s.y;
+			s.y = R - 1;
+			s.d = 0;
+			move_shark(s, dist - moved);
+		}
+	}
+	else {
+		int xx = s.x + dx[s.d] * dist;
+		if (0 <= xx && xx < C) {
+			s.x = xx;
+			return;
+		}
+		else if (xx < 0) {
+			int moved = s.x;
+			s.x = 0;
+			s.d = 2;
+			move_shark(s, dist - moved);
+		}
+		else {
+			int moved = C - 1 - s.x;
+			s.x = C - 1;
+			s.d = 3;
+			move_shark(s, dist - moved);
+		}
+	}
+}
+
+int catch_shark(int x) {
+	int ret = 0;
+	for(int y = 0; y < R; ++y) {
+		if (shark_idx[y][x] != -1) {
+			Info& shark = sharks[shark_idx[y][x]];
+			if (shark.eaten) continue;
+			shark_idx[y][x] = -1;
+			ret = shark.size;
+			shark.eaten = true;
+			break;
+		}
+	}
+	return ret;
+}
+
+void input() {
+	memset(shark_idx, -1, sizeof(shark_idx));
+	scanf("%d %d %d", &R, &C, &M);
+	sharks.resize(M);
+
+	for (int i = 0; i < M; ++i) {
+		int r, c, s, d, z;
+		scanf("%d %d %d %d %d", &r, &c, &s, &d, &z);
+		--r; --c; --d;
+		if (d <= 1) {
+			s = s % (R * 2 - 2);
+		}
+		else {
+			s = s % (C * 2 - 2);
+		}
+		sharks[i] = { r, c, d, s, z, false };
+		shark_idx[r][c] = i;
+	}
+}
 ```
 </details>
 
 ### 설명
+구현 문제.
+
+1. 최대 100번의 반복을 하므로, 첫 상어 개수를 매 반복마다 순회한다고 해도 최대 O(100 x 100 x 100) = O(1,000,000) 이므로 시간 안에 수행 가능하다.
+
+2. 따라서 Info 구조체 안에 bool eaten 변수를 사용하여 구현해도 된다는 것을 알 수 있다. 
+   (안쓰면 매번 먹힌 상어를 지워줘야 함.)
 
 ***
 
