@@ -2064,19 +2064,127 @@ bfs 구현 문제.
 
 ***
 
-## 문제
-> 링크
+## 미세먼지 안녕!
+> https://www.acmicpc.net/problem/17144
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+int R, C, T, board[50][50], tmp[50][50];
+int a_y;
+void input();
+
+void spread();
+void aircondition();
+
+int main() {
+    input();
+
+    for (int t = 0; t < T; ++t) {
+        spread();
+        aircondition();
+    }
+
+    int sum = 0;
+    for (int y = 0; y < R; ++y) {
+        for (int x = 0; x < C; ++x) {
+            sum += board[y][x];
+        }
+    }
+    printf("%d", sum);
+
+    return 0;
+}
+
+void aircondition() {
+    int y, x;
+    // 1. 위쪽 방향
+    y = a_y - 1, x = 0;
+    while (y >= 1) {
+        board[y][x] = board[y - 1][x];
+        --y;
+    }
+    while (x <= C - 2) {
+        board[y][x] = board[y][x + 1];
+        ++x;
+    }
+    while (y <= a_y - 1) {
+        board[y][x] = board[y + 1][x];
+        ++y;
+    }
+    while (x >= 2) {
+        board[y][x] = board[y][x - 1];
+        --x;
+    }
+    board[a_y][x] = 0;
+
+    // 2. 아래쪽 방향
+    y = a_y + 2, x = 0;
+    while (y <= R - 2) {
+        board[y][x] = board[y + 1][x];
+        ++y;
+    }
+    while (x <= C - 2) {
+        board[y][x] = board[y][x + 1];
+        ++x;
+    }
+    while (y >= a_y + 2) {
+        board[y][x] = board[y - 1][x];
+        --y;
+    }
+    while (x >= 2) {
+        board[y][x] = board[y][x - 1];
+        --x;
+    }
+    board[a_y + 1][x] = 0;
+}
+
+void spread() {
+    memset(tmp, 0, sizeof(tmp));
+    board[a_y][0] = board[a_y + 1][0] = -1;
+    for (int y = 0; y < R; ++y) {
+        for (int x = 0; x < C; ++x) {
+            if (board[y][x] <= 0) continue;
+            int s_cnt = 0;
+            for (int d = 0; d < 4; ++d) {
+                int yy = y + dy[d], xx = x + dx[d];
+                if (yy < 0 || yy >= R || xx < 0 || xx >= C || board[yy][xx] == -1) continue;
+                ++s_cnt;
+                tmp[yy][xx] += board[y][x] / 5;
+            }
+            tmp[y][x] += board[y][x] - s_cnt * (board[y][x] / 5);
+        }
+    }
+    memcpy(board, tmp, sizeof(board));
+}
+
+void input() {
+    scanf("%d %d %d", &R, &C, &T);
+    for (int y = 0; y < R; ++y) {
+        for (int x = 0; x < C; ++x) {
+            scanf("%d", &board[y][x]);
+            if (board[y][x] == -1 && a_y == 0) {
+                a_y = y;
+            }
+        }
+    }
+}
 ```
 </details>
 
 ### 설명
+구현문제.
+board의 변화값을 tmp에 저장하고, 다시 board에 복사하는 경우 
 
+board의 기본값이 tmp에 정확히 저장되는지 확인해야 한다.
+
+여기서는 공기청정기의 위치가 -1로 저장되므로, tmp에도 공기청정기의 위치를 표시해주어야 한다.
 ***
 
 ## 문제
