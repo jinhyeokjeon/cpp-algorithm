@@ -2579,18 +2579,122 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 17779. 게리맨더링 2
+> https://www.acmicpc.net/problem/17779
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <algorithm>
+using namespace std;
+
+int N, A[21][21], total;
+bool line[21][21];
+void input();
+
+int min_gap = 987654321;
+void make_line(int x, int y, int d1, int d2);
+void calc(int x, int y, int d1, int d2);
+
+int main() {
+  input();
+  for (int x = 1; x <= N - 2; ++x) {
+    for (int y = 2; y <= N - 1; ++y) {
+      for (int d1 = 1; d1 <= N - 2; ++d1) {
+        for (int d2 = 1; d2 <= N - 2; ++d2) {
+          if (x + d1 + d2 > N) continue;
+          if (y - d1 < 1 || y + d2 > N) continue;
+          make_line(x, y, d1, d2);
+          calc(x, y, d1, d2);
+        }
+      }
+    }
+  }
+  printf("%d", min_gap);
+}
+
+void calc(int x, int y, int d1, int d2) {
+  int num[5] = { 0, };
+
+  for (int yy = 1; yy <= y; ++yy) {
+    for (int xx = 1; xx < x + d1 && !line[xx][yy]; ++xx) {
+      num[0] += A[xx][yy];
+    }
+  }
+
+  for (int yy = y + 1; yy <= N; ++yy) {
+    for (int xx = 1; xx <= x + d2 && !line[xx][yy]; ++xx) {
+      num[1] += A[xx][yy];
+    }
+  }
+
+  for (int yy = 1; yy < y - d1 + d2; ++yy) {
+    for (int xx = N; xx >= x + d1 && !line[xx][yy]; --xx) {
+      num[2] += A[xx][yy];
+    }
+  }
+
+  for (int yy = y - d1 + d2; yy <= N; ++yy) {
+    for (int xx = N; xx > x + d2 && !line[xx][yy]; --xx) {
+      num[3] += A[xx][yy];
+    }
+  }
+
+  num[4] = total;
+  for (int i = 0; i < 4; ++i) {
+    num[4] -= num[i];
+  }
+
+  sort(num, num + 5);
+  min_gap = min(min_gap, num[4] - num[0]);
+}
+
+void make_line(int x, int y, int d1, int d2) {
+  memset(line, false, sizeof(line));
+
+  int xx = x, yy = y;
+  while (xx <= x + d1) {
+    line[xx][yy] = true;
+    ++xx; --yy;
+  }
+
+  xx = x, yy = y;
+  while (xx <= x + d2) {
+    line[xx][yy] = true;
+    ++xx; ++yy;
+  }
+
+  xx = x + d1, yy = y - d1;
+  while (xx <= x + d1 + d2) {
+    line[xx][yy] = true;
+    ++xx; ++yy;
+  }
+
+  xx = x + d2, yy = y + d2;
+  while (xx <= x + d2 + d1) {
+    line[xx][yy] = true;
+    ++xx; --yy;
+  }
+}
+
+void input() {
+  scanf("%d", &N);
+  for (int i = 1; i <= N; ++i) {
+    for (int j = 1; j <= N; ++j) {
+      scanf("%d", &A[i][j]);
+      total += A[i][j];
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+가능한 모든 x, y, d1, d2 조합의 수는 O(20 * 20 * 20 * 20) = O(160,000) 으로, 매 반복마다 O(400) 연산을 하여도, 최대 O(64,000,000) 으로 브루트 포스로 풀더라도 시간 내에 충분히 가능하다.
 
 ***
 
