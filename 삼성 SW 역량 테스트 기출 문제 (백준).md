@@ -3108,19 +3108,165 @@ void dfs(int turn, int sum) {
 
 ***
 
-## 문제
-> 링크
+## 20061. 모노미노도미노 2
+> https://www.acmicpc.net/problem/20061
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+
+int N, t, y, x, score;
+bool green[6][4], blue[6][4];
+
+void move(bool (*board)[4]);
+int rem_block(bool (*board)[4]);
+void clr_block(bool (*board)[4]);
+
+void print(bool (*board)[4]) {
+  printf("\n");
+  for (int i = 0; i < 6; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      printf("%d", board[i][j]);
+    }
+    printf("\n");
+  }
+}
+
+int main() {
+  scanf("%d", &N);
+  while (N--) {
+    scanf("%d %d %d", &t, &y, &x);
+    if (t == 1) {
+      green[1][x] = true;
+      blue[1][y] = true;
+    }
+    else if (t == 2) {
+      green[1][x] = green[1][x + 1] = true;
+      blue[0][y] = blue[1][y] = true;
+    }
+    else {
+      green[0][x] = green[1][x] = true;
+      blue[1][y] = blue[1][y + 1] = true;
+    }
+
+    move(green); move(blue);
+    score += rem_block(green);
+    score += rem_block(blue);
+    clr_block(green);
+    clr_block(blue);
+  }
+
+  int cnt = 0;
+  for (int y = 2; y < 6; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      if (green[y][x]) ++cnt;
+      if (blue[y][x]) ++cnt;
+    }
+  }
+
+  printf("%d\n%d", score, cnt);
+  return 0;
+}
+
+void clr_block(bool (*board)[4]) {
+  int cnt = 0;
+  for (int y = 0; y < 2; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      if (board[y][x]) {
+        ++cnt;
+        break;
+      }
+    }
+  }
+  if (cnt == 0) return;
+
+  for (int y = 5; y >= 2; --y) {
+    for (int x = 0; x < 4; ++x) {
+      board[y][x] = board[y - cnt][x];
+    }
+  }
+
+  for (int y = 0; y < 2; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      board[y][x] = false;
+    }
+  }
+}
+
+int rem_block(bool (*board)[4]) {
+  int ret = 0;
+
+  while (true) {
+    bool rem = false;
+
+    for (int y = 5; y >= 2; --y) {
+      bool fill = true;
+      for (int x = 0; x < 4; ++x) {
+        if (!board[y][x]) {
+          fill = false;
+          break;
+        }
+      }
+
+      if (fill) {
+        ++ret; rem = true;
+        for (int yy = y; yy >= 1; --yy) {
+          for (int x = 0; x < 4; ++x) {
+            board[yy][x] = board[yy - 1][x];
+          }
+        }
+        for (int x = 0; x < 4; ++x) {
+          board[0][x] = false;
+        }
+        break;
+      }
+    }
+
+    if (!rem) break;
+  }
+
+  return ret;
+}
+
+void move(bool (*board)[4]) {
+  // 블록이 어디까지 이동하는지 확인
+  int y;
+  for (y = 2; y < 6; ++y) {
+    bool check = true;
+    for (int x = 0; x < 4; ++x) {
+      if (board[1][x] && board[y][x]) {
+        check = false;
+        break;
+      }
+    }
+    if (!check) {
+      break;
+    }
+  }
+  --y;
+
+  // 블록 이동
+  if (y >= 2) {
+    for (int x = 0; x < 4; ++x) {
+      board[y][x] |= board[1][x];
+      board[1][x] = false;
+    }
+    for (int x = 0; x < 4; ++x) {
+      board[y - 1][x] |= board[0][x];
+      board[0][x] = false;
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+1. 파란색 보드를 6행 4열의 보드로 뒤집어서 생각하면, 초록색 보드와 동일한 코드로 작업을 수행할 수 있다.
 
+2. 이러한 복잡한 구현 문제는 절대 한번에 풀지 말고, 출력 함수를 먼저 만든 후, 매 기능을 구현할 때마다 출력을 하며 디버깅해야한다.
 ***
 
 ## 문제
