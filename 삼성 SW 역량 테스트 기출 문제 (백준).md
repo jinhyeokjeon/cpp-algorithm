@@ -2698,18 +2698,143 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 17837. 새로운 게임 2
+> https://www.acmicpc.net/problem/17837
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <vector>
+using namespace std;
+
+const int dy[4] = { 0, 0, -1, 1 }, dx[4] = { 1, -1, 0, 0 };
+struct Info {
+    int y, x, d, idx;
+};
+int N, K;
+char color[12][12];
+Info horses[10];
+vector<int> horse_nums[12][12];
+void input();
+
+bool move(int idx);
+bool move_white(int idx);
+bool move_red(int idx);
+
+void print(int num) {
+    printf("\n");
+    printf("move %d\n", num);
+    for (int y = 0; y < N; ++y) {
+        for (int x = 0; x < N; ++x) {
+            printf("%d ", horse_nums[y][x].size());
+        }
+        printf("\n");
+    }
+}
+
+int main() {
+    input();
+    for (int turn = 1; turn <= 1000; ++turn) {
+        for (int h = 0; h < K; ++h) {
+            if (!move(h)) {
+                printf("%d", turn);
+                return 0;
+            }
+        }
+    }
+    printf("-1");
+    return 0;
+}
+
+bool move(int idx) {
+    Info& h = horses[idx];
+    int yy = h.y + dy[h.d], xx = h.x + dx[h.d];
+    if (yy < 0 || yy >= N || xx < 0 || xx >= N || color[yy][xx] == 2) { // 경계 밖 or 파란색
+        h.d = (h.d <= 1 ? 1 - h.d : 5 - h.d);
+        yy = h.y + dy[h.d], xx = h.x + dx[h.d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N || color[yy][xx] == 2) {
+            return true;
+        }
+        else if (color[yy][xx] == 0) {
+            return move_white(idx);
+        }
+        else {
+            return move_red(idx);
+        }
+    }
+    else if (color[yy][xx] == 0) { // 흰색
+        return move_white(idx);
+    }
+    else { // 빨간색
+        return move_red(idx);
+    }
+}
+
+bool move_white(int idx) {
+    Info& h = horses[idx];
+    int y = h.y, x = h.x, yy = h.y + dy[h.d], xx = h.x + dx[h.d];
+
+    vector<int>& from = horse_nums[y][x];
+    vector<int>& to = horse_nums[yy][xx];
+
+    int start = h.idx;
+    for (int i = start; i < from.size(); ++i) {
+        horses[from[i]].y = yy;
+        horses[from[i]].x = xx;
+        horses[from[i]].idx = to.size();
+        to.push_back(from[i]);
+    }
+
+    from.erase(from.begin() + start, from.end());
+
+    return horse_nums[yy][xx].size() < 4;
+}
+
+bool move_red(int idx) {
+    Info& h = horses[idx];
+    int y = h.y, x = h.x, yy = h.y + dy[h.d], xx = h.x + dx[h.d];
+
+    vector<int>& from = horse_nums[y][x];
+    vector<int>& to = horse_nums[yy][xx];
+
+    int start = h.idx;
+    for (int i = from.size() - 1; i >= start; --i) {
+        horses[from[i]].y = yy;
+        horses[from[i]].x = xx;
+        horses[from[i]].idx = to.size();
+        to.push_back(from[i]);
+    }
+
+    from.erase(from.begin() + start, from.end());
+
+    return horse_nums[yy][xx].size() < 4;
+}
+
+void input() {
+    scanf("%d %d", &N, &K);
+    for (int i = 0; i < N; ++i) {
+        for (int j = 0; j < N; ++j) {
+            scanf("%hhd", &color[i][j]);
+        }
+    }
+    for (int i = 0; i < K; ++i) {
+        int y, x, d;
+        scanf("%d %d %d", &y, &x, &d);
+        --y; --x; --d;
+        horses[i] = { y, x, d, 0 };
+        horse_nums[y][x].push_back(i);
+    }
+}
 ```
 </details>
 
 ### 설명
+1. 말은 번호 순서대로 움직이므로 말들의 정보를 vector에 일렬로 저장한다.
+
+2. 보드를 나타내는 2차원 배열 위에서는, 해당 칸에 존재하는 말들의 vector 상의 인덱스를 저장한다.
 
 ***
 
