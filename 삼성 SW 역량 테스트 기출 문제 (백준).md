@@ -3023,18 +3023,88 @@ check = check || bfs(num, i); // 이렇게 하면 안됨.
 
 ***
 
-## 문제
-> 링크
+## 17825. 주사위 윷놀이
+> https://www.acmicpc.net/problem/17825
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
+int score[33] = { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
+                 32, 34, 36, 38, 40, 13, 16, 19, 25, 30, 35, 22, 24, 28, 27, 26, 0 };
+int next_pos[33][2] = { {1}, {2}, {3}, {4}, {5}, {6, 21}, {7}, {8}, {9}, {10},
+                       {11, 27}, {12}, {13}, {14}, {15}, {16, 29}, {17},
+                       {18}, {19}, {20}, {32}, {22}, {23}, {24}, {25},
+                       {26}, {20}, {28}, {24}, {30}, {31}, {24}, {0} };
+int h_pos[4], dice[10];
+
+int max_score;
+void dfs(int turn, int sum);
+
+int main() {
+    for (int i = 0; i < 10; ++i) {
+        scanf("%d", &dice[i]);
+    }
+    dfs(0, 0);
+    printf("%d", max_score);
+    return 0;
+}
+
+int get_there(int pos, int d) {
+    while (d--) {
+        if (pos == 32) break;
+        pos = next_pos[pos][0];
+    }
+    return pos;
+}
+
+bool can_go(int there) {
+    for (int i = 0; i < 4; ++i) {
+        if (h_pos[i] != 32 && h_pos[i] == there) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void dfs(int turn, int sum) {
+    if (turn == 10) {
+        max_score = max(max_score, sum);
+        return;
+    }
+
+    for (int h = 0; h < 4; ++h) {
+        int here = h_pos[h], there;
+        if (here == 32) continue;
+        if (next_pos[here][1] == 0) {
+            there = get_there(next_pos[here][0], dice[turn] - 1);
+        }
+        else {
+            there = get_there(next_pos[here][1], dice[turn] - 1);
+        }
+        if (can_go(there)) {
+            h_pos[h] = there;
+            dfs(turn + 1, sum + score[there]);
+            h_pos[h] = here;
+        }
+    }
+}
 ```
 </details>
 
 ### 설명
+문제 설명을 보면 '**말이 파란색 칸에서 이동을 시작하면 파란색 화살표를 타야 하고**' 라고 적혀있다.
+
+파란색 칸에서는 빨간색 선을 타면 안된다.
+
+문제를 잘 보자!!!
+
+말이 4개이고, 총 10개의 주사위 수가 주어지므로 가능한 경우의 수는 4^10 으로 모든 경우를 시간 안에 다 세볼 수 있다.
 
 ***
 
