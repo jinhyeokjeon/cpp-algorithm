@@ -3269,18 +3269,164 @@ void move(bool (*board)[4]) {
 2. 이러한 복잡한 구현 문제는 절대 한번에 풀지 말고, 출력 함수를 먼저 만든 후, 매 기능을 구현할 때마다 출력을 하며 디버깅해야한다.
 ***
 
-## 문제
-> 링크
+## 19236. 청소년 상어
+> https://www.acmicpc.net/problem/19236
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+const int dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 }, dx[8] = { 0, -1, -1, -1, 0, 1, 1, 1 };
+
+struct Pos {
+  int y, x, d;
+  bool eaten;
+};
+
+int f_num;
+struct Info {
+  char board[4][4];
+  Pos fishes[17];
+  int sy, sx, sd;
+};
+
+Info info;
+void input();
+
+int max_sum;
+void dfs(int sum);
+
+void print() {
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      printf("%3d", info.board[y][x]);
+    }
+    printf("\n");
+  }
+}
+
+int main() {
+  input();
+
+  // (0, 0) 물고기 먹기
+  int num = info.board[0][0];
+  info.board[0][0] = 0;
+  info.sy = info.sx = 0;
+  info.sd = info.fishes[num].d;
+  info.fishes[num].eaten = true;
+  // dfs 시작
+  dfs(num);
+
+  printf("%d", max_sum);
+
+  return 0;
+}
+
+void move_fish(int num) {
+  Pos& fish = info.fishes[num];
+  int y = fish.y, x = fish.x;
+  for (int i = 0; i < 8; ++i) {
+    int yy = y + dy[fish.d];
+    int xx = x + dx[fish.d];
+    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4 || (yy == info.sy && xx == info.sx)) {
+      fish.d = (fish.d + 1) % 8;
+      continue;
+    }
+    Pos& _fish = info.fishes[info.board[yy][xx]];
+    swap(info.board[y][x], info.board[yy][xx]);
+    fish.y = yy; fish.x = xx;
+    _fish.y = y; _fish.x = x;
+    break;
+  }
+}
+
+void dfs(int sum) {
+  max_sum = max(max_sum, sum);
+
+  // dfs 시작 전 info 값 백업
+  //Info ori = info;
+  Info* ori = new Info();
+  memcpy(ori, &info, sizeof(info));
+
+  // 물고기 이동
+  for (int num = 1; num <= 16; ++num) {
+    if (info.fishes[num].eaten) continue;
+    move_fish(num);
+  }
+
+  // 물고기 이동한 상태 백업
+  //Info moved = info;
+  Info* moved = new Info();
+  memcpy(moved, &info, sizeof(info));
+
+  // 먹을 수 있는 물고기 찾기
+  vector<pair<int, int>> cand;
+  for (int i = 1; ; ++i) {
+    int yy = info.sy + dy[info.sd] * i;
+    int xx = info.sx + dx[info.sd] * i;
+    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4) break;
+    if (info.board[yy][xx] != 0) {
+      cand.emplace_back(yy, xx);
+    }
+  }
+
+  // 먹을 수 있는 물고기 없으면 탐색 종료
+  if (cand.empty()) {
+    info = *ori;
+    delete ori;
+    delete moved;
+    return;
+  }
+
+  // 물고기 먹고 재귀호출
+  for (auto& p : cand) {
+    int eaten_num = info.board[p.first][p.second];
+    info.board[p.first][p.second] = 0;
+    Pos& eaten_fish = info.fishes[eaten_num];
+    eaten_fish.eaten = true;
+    info.sy = p.first;
+    info.sx = p.second;
+    info.sd = eaten_fish.d;
+    dfs(sum + eaten_num);
+
+    // info 값 물고기만 이동시킨 상태로 복구
+    info = *moved;
+  }
+
+  // info 값 복구
+  info = *ori;
+  delete ori;
+  delete moved;
+}
+
+void input() {
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      int a, b;
+      scanf("%d %d", &a, &b);
+      info.board[y][x] = a;
+      info.fishes[a] = { y, x, b - 1, false };
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+1. dfs로 가능한 모든 경우를 탐색하며 최댓값을 찾는 문제.
+
+2. 적절한 print 함수를 만들어서, 한 기능이 완성되면 테스트하여 디버깅하며 구현해야 한다.
+
+3. dfs 함수 내부에서 구조체 원본을 백업해놓을때, 우선적으로는 스택에 할당하되, 구현이 끝나고 나서 힙에 할당하는 방식으로 바꾸면 스택 공간을 절약할 수 있다.
+
+   new / delete 연산자로 동적 할당 / 메모리 해제 를 할 수 있다.
 
 ***
 
