@@ -2838,18 +2838,188 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 17822. 원판 돌리기
+> https://www.acmicpc.net/problem/17822
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <queue>
+#include <vector>
+using namespace std;
+
+struct Pos {
+	int y, x;
+};
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+int N, M, T, circle[51][50];
+void input();
+
+void rotate(int num, int dir, int cnt);
+
+bool discovered[51][50];
+bool calc1();
+void calc2();
+
+void print() {
+	printf("\n");
+	for (int num = 1; num <= N; ++num) {
+		for (int i = 0; i < M; ++i) {
+			printf("%d ", circle[num][i]);
+		}
+		printf("\n");
+	}
+}
+
+int main() {
+	input();
+	while (T--) {
+		int x, d, k;
+		scanf("%d %d %d", &x, &d, &k);
+		for (int num = 1; num <= N; ++num) {
+			if (num % x == 0) {
+				rotate(num, d, k);
+			}
+		}
+		if (!calc1()) {
+			calc2();
+		}
+	}
+
+	int sum = 0;
+	for (int num = 1; num <= N; ++num) {
+		for (int i = 0; i < M; ++i) {
+			sum += circle[num][i];
+		}
+	}
+	printf("%d", sum);
+
+	return 0;
+}
+
+void calc2() {
+	double sum = 0;
+	int cnt = 0;
+	for (int num = 1; num <= N; ++num) {
+		for (int i = 0; i < M; ++i) {
+			if (circle[num][i]) {
+				sum += circle[num][i];
+				++cnt;
+			}
+		}
+	}
+
+	sum /= cnt;
+
+	for (int num = 1; num <= N; ++num) {
+		for (int i = 0; i < M; ++i) {
+			if (circle[num][i]) {
+				if (circle[num][i] > sum) {
+					--circle[num][i];
+				}
+				else if(circle[num][i] < sum) {
+					++circle[num][i];
+				}
+			}
+		}
+	}
+}
+
+bool bfs(int num, int i) {
+	queue<Pos> q;
+	vector<Pos> v;
+
+	discovered[num][i] = true;
+	q.push({ num, i });
+	    
+	while (!q.empty()) {
+		Pos here = q.front(); q.pop();
+		v.push_back(here);
+		for (int d = 0; d < 4; ++d) {
+			int yy = here.y + dy[d], xx = here.x + dx[d];
+			if (xx == -1) xx = M - 1;
+			else if (xx == M) xx = 0;
+			if (yy <= 0 || yy > N || discovered[yy][xx]) continue;
+			if (circle[here.y][here.x] == circle[yy][xx]) {
+				discovered[yy][xx] = true;
+				q.push({ yy, xx });
+			}
+		}
+	}
+
+	if (v.size() == 1) return false;
+
+	for (Pos& p : v) {
+		circle[p.y][p.x] = 0;
+	}
+
+	return true;
+}
+
+bool calc1() {
+	memset(discovered, false, sizeof(discovered));
+	bool check = false;
+
+	for (int num = 1; num <= N; ++num) {
+		for (int i = 0; i < M; ++i) {
+			if (!discovered[num][i] && circle[num][i] != 0) {
+				if (bfs(num, i)) {
+				check = true;
+				}
+			}
+		}
+	}
+
+	return check;
+}
+
+void rotate(int num, int dir, int cnt) {
+	int tmp[50] = { 0, };
+
+	if (dir == 0) {
+		for(int i = 0; i < M; ++i) {
+			tmp[(i + cnt) % M] = circle[num][i];
+		}
+	}
+	else {
+		for (int i = 0; i < M; ++i) {
+			tmp[(i - cnt + M) % M] = circle[num][i];
+		}
+	}
+
+	memcpy(circle[num], tmp, sizeof(tmp));
+}
+
+void input() {
+	scanf("%d %d %d", &N, &M, &T);
+	for (int i = 1; i <= N; ++i) {
+		for (int j = 0; j < M; ++j) {
+			scanf("%d", &circle[i][j]);
+		}
+	}
+}
 ```
 </details>
 
 ### 설명
+구현 + bfs 문제.
+
+지운 수를 0으로 정의하였으므로, 값이 0인 부분에서 bfs를 수행하지 않도록 해야한다.
+
+bfs / dfs 에서 다음 노드로 탐색을 파고 들어갈 때, 탐색 조건을 만족하는지 꼭 확인해야한다.
+
+**|| 연산자를 사용하면, 왼쪽이 참일 경우 오른쪽은 수행하지 않는다.**
+
+```cpp
+if (bfs(num, i)) {
+  check = true;
+}
+
+check = check || bfs(num, i); // 이렇게 하면 안됨.
+```
 
 ***
 
