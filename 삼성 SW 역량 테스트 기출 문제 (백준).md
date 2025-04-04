@@ -3795,6 +3795,165 @@ void input() {
 
 ***
 
+## 20055. 컨베이어 벨트 위의 로봇
+> https://www.acmicpc.net/problem/20055
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+#include <cstdio>
+
+int N, K, A[200], zero_cnt;
+bool robot[200];
+void input();
+
+void rotate();
+void move_robots();
+
+int main() {
+  input();
+
+  for (int turn = 1; ; ++turn) {
+    // 1. 컨베이어 벨트 및 로봇 회전
+    rotate();
+    // 2. 내리는 위치에서 로봇 내리기
+    if (robot[N - 1]) robot[N - 1] = false;
+    // 3. 로봇 움직이기
+    move_robots();
+    // 4. 내리는 위치에서 로봇 내리기
+    if (robot[N - 1]) robot[N - 1] = false;
+    // 5. 로봇 올리기
+    if (A[0] > 0 && !robot[0]) {
+      --A[0];
+      robot[0] = true;
+      if (A[0] == 0) {
+        ++zero_cnt;
+      }
+    }
+    if (zero_cnt >= K) {
+      printf("%d", turn);
+      break;
+    }
+  }
+
+  return 0;
+}
+
+void move_robots() {
+  for (int r = N - 2; r >= 0; --r) {
+    if (robot[r] && !robot[r + 1] && A[r + 1] >= 1) {
+      robot[r] = false;
+      robot[r + 1] = true;
+      --A[r + 1];
+      if (A[r + 1] == 0) ++zero_cnt;
+    }
+  }
+}
+
+void rotate() {
+  int tmp = A[2 * N - 1];
+  for (int i = 2 * N - 1; i >= 1; --i) {
+    A[i] = A[i - 1];
+  }
+  A[0] = tmp;
+
+  for (int i = N - 1; i >= 1; --i) {
+    robot[i] = robot[i - 1];
+  }
+  robot[0] = false;
+}
+
+void input() {
+  scanf("%d %d", &N, &K);
+  for (int i = 0; i < 2 * N; ++i) {
+    scanf("%d", &A[i]);
+  }
+}
+```
+</details>
+
+### 설명
+단순한 구현 문제.
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
+## 문제
+> 링크
+
+### 코드
+<details>
+<summary>C++</summary>
+
+```cpp
+```
+</details>
+
+### 설명
+
+***
+
 ## 문제
 > 링크
 
