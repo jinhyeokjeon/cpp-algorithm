@@ -3638,18 +3638,160 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 19238. 스타트 택시
+> https://www.acmicpc.net/problem/19238
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <vector>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+struct Pos {
+  int y, x;
+  bool operator< (const Pos& rhs) const {
+    if (y != rhs.y) return y < rhs.y;
+    return x < rhs.x;
+  }
+};
+struct Info {
+  Pos from, to;
+  bool arrived;
+  bool operator< (const Info& rhs) const {
+    return from < rhs.from;
+  }
+};
+int N, M, fuel, t_y, t_x;
+char board[20][20];
+vector<Info> guests;
+void input();
+
+int dist[20][20];
+void get_dist();
+
+int get_min_guest();
+
+void print_dist() {
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      printf("%3d", dist[y][x]);
+    }
+    printf("\n");
+  }
+}
+
+int main() {
+  input();
+
+  for (int turn = 0; turn < M; ++turn) {
+    // 1. 택시로부터 모든 칸까지의 거리 구하기
+    get_dist();
+    // 2. 가장 가까운 손님의 인덱스 구하기
+    int g_idx = get_min_guest();
+    if (g_idx == -1) {
+      printf("-1");
+      return 0;
+    }
+    // 3. 택시 손님까지 이동
+    Info& g = guests[g_idx];
+    fuel -= dist[g.from.y][g.from.x];
+    if (fuel < 0) {
+      printf("-1");
+      return 0;
+    }
+    t_y = g.from.y; t_x = g.from.x;
+    // 4. 손님 위치부터 목적지까지의 거리 계산
+    get_dist();
+    // 5. 택시 목적지까지 이동
+    fuel -= dist[g.to.y][g.to.x];
+    if (fuel < 0) {
+      printf("-1");
+      return 0;
+    }
+    fuel += dist[g.to.y][g.to.x] * 2;
+    t_y = g.to.y; t_x = g.to.x;
+
+    // 6. 손님 도착 체크
+    g.arrived = true;
+  }
+  printf("%d", fuel);
+  return 0;
+}
+
+int get_min_guest() {
+  int min_dist = 987654321;
+  for (Info& g : guests) {
+    if (g.arrived) continue;
+    if (dist[g.from.y][g.from.x] == -1) {
+      return -1;
+    }
+    min_dist = min(min_dist, dist[g.from.y][g.from.x]);
+  }
+
+  for (int i = 0; i < guests.size(); ++i) {
+    Info& g = guests[i];
+    if (g.arrived) continue;
+    if (dist[g.from.y][g.from.x] == min_dist) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+void get_dist() {
+  memset(dist, -1, sizeof(dist));
+  queue<Pos> q;
+
+  dist[t_y][t_x] = 0;
+  q.push({ t_y, t_x });
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    for (int d = 0; d < 4; ++d) {
+      int yy = here.y + dy[d], xx = here.x + dx[d];
+      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+      if (dist[yy][xx] != -1 || board[yy][xx] == 1) continue;
+      dist[yy][xx] = dist[here.y][here.x] + 1;
+      q.push({ yy, xx });
+    }
+  }
+}
+
+void input() {
+  scanf("%d %d %d", &N, &M, &fuel);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%hhd", &board[i][j]);
+    }
+  }
+  scanf("%d %d", &t_y, &t_x);
+  --t_y; --t_x;
+
+  guests.resize(M);
+  for (int i = 0; i < M; ++i) {
+    scanf("%d %d %d %d", &guests[i].from.y, &guests[i].from.x, &guests[i].to.y, &guests[i].to.x);
+    --guests[i].from.y; --guests[i].from.x; --guests[i].to.y; --guests[i].to.x;
+    guests[i].arrived = false;
+  }
+  sort(guests.begin(), guests.end());
+}
 ```
 </details>
 
 ### 설명
+구현 + bfs 문제.
+
+1. 문제에서 필요한 정보 (좌표, 두 좌표를 갖는 손님) 를 구조체로 표현하여 코드를 작성하면 깔끔하다.
+
+2. **문제를 푸는 도중도중에 반드시 print 해가며 올바르게 진행중인지 확인해야한다.**
 
 ***
 
