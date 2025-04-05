@@ -4103,18 +4103,143 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 20058. 마법사 상어와 파이어스톰
+> https://www.acmicpc.net/problem/20058
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <algorithm>
+using namespace std;
+
+struct Pos {
+  int y, x;
+};
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+int N, Q, L, A[64][64];
+void input();
+
+int tmp[64][64];
+void firestorm();
+void rotate(int y, int x);
+
+bool discovered[64][64];
+int bfs(int y, int x);
+
+int main() {
+  input();
+  while (Q--) {
+    scanf("%d", &L);
+    L = (1 << L);
+    // 파이어스톰 시전
+    firestorm();
+  }
+
+  // 얼음 합 출력
+  int sum = 0;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      sum += A[y][x];
+    }
+  }
+  printf("%d\n", sum);
+
+  // 덩어리가 차지하는 칸 계산
+  int max_cnt = 0;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (!discovered[y][x] && A[y][x] > 0) {
+        max_cnt = max(max_cnt, bfs(y, x));
+      }
+    }
+  }
+  printf("%d", max_cnt);
+
+  return 0;
+}
+
+int bfs(int y, int x) {
+  int cnt = 0;
+  queue<Pos> q;
+
+  discovered[y][x] = true;
+  q.push({ y, x });
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    ++cnt;
+    for (int d = 0; d < 4; ++d) {
+      int yy = here.y + dy[d], xx = here.x + dx[d];
+      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+      if (discovered[yy][xx] || A[yy][xx] == 0) continue;
+      discovered[yy][xx] = true;
+      q.push({ yy, xx });
+    }
+  }
+
+  return cnt;
+}
+
+void firestorm() {
+  // 시계방향 90도 회전
+  for (int y = 0; y < N; y += L) {
+    for (int x = 0; x < N; x += L) {
+      rotate(y, x);
+    }
+  }
+  memcpy(A, tmp, sizeof(A));
+
+  // 얼음 양 조절
+  memset(tmp, 0, sizeof(tmp));
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (A[y][x] == 0) continue;
+      int cnt = 0;
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+        if (A[yy][xx] > 0) ++cnt;
+      }
+      if (cnt < 3) {
+        tmp[y][x] = A[y][x] - 1;
+      }
+      else {
+        tmp[y][x] = A[y][x];
+      }
+    }
+  }
+  memcpy(A, tmp, sizeof(A));
+}
+
+void rotate(int y, int x) {
+  for (int yy = 0; yy < L; ++yy) {
+    for (int xx = 0; xx < L; ++xx) {
+      tmp[y + xx][x + L - 1 - yy] = A[y + yy][x + xx];
+    }
+  }
+}
+
+void input() {
+  scanf("%d %d", &N, &Q);
+  N = (1 << N);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &A[i][j]);
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+구현 + bfs 문제.
+struct와 전역변수를 적절히 사용하면 간단하게 코드를 작성할 수 있다.
 
 ***
 
