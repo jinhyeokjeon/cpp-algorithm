@@ -3998,18 +3998,108 @@ MOD 연산을 사용할 때에는 항상 주의해야 한다.
 
 ***
 
-## 문제
-> 링크
+## 20057. 마법사 상어와 토네이도
+> https://www.acmicpc.net/problem/20057
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+
+struct Pos {
+  int y, x;
+};
+int N, A[499][499], dir[3] = { 3, 0, 1 }; // d_r, dir, d_l
+Pos from, to, to2;
+void input();
+
+const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { -1, 0, 1, 0 };
+const int d_num[9][3] = { // d_r, dir, d_l
+  {1, 0, 0}, {1, 1, 0}, {2, 1, 0}, {1, 2, 0}, {0, 3, 0}, {0, 0, 1}, {0, 1, 1}, {0, 2, 1}, {0, 1, 2}
+};
+const int per[9] = { 1, 7, 2, 10, 5, 1, 7, 10, 2 };
+
+int out;
+void blow(int len);
+
+int main() {
+  input();
+
+  for (int len = 1; ; ++len) {
+    blow(len);
+    for (int i = 0; i < 3; ++i) {
+      dir[i] = (dir[i] + 1) % 4;
+    }
+
+    blow(len);
+    for (int i = 0; i < 3; ++i) {
+      dir[i] = (dir[i] + 1) % 4;
+    }
+
+    if (len == N - 1) {
+      blow(len);
+      break;
+    }
+  }
+
+  printf("%d", out);
+
+  return 0;
+}
+
+void blow(int len) {
+  if (len == 0) return;
+
+  to = { from.y + dy[dir[1]], from.x + dx[dir[1]] };
+  to2 = { to.y + dy[dir[1]], to.x + dx[dir[1]] };
+
+  int sum = 0;
+  for (int i = 0; i < 9; ++i) {
+    int yy = from.y, xx = from.x;
+    for (int j = 0; j < 3; ++j) {
+      yy += dy[dir[j]] * d_num[i][j];
+      xx += dx[dir[j]] * d_num[i][j];
+    }
+    int sand = A[to.y][to.x] * per[i] / 100;
+    sum += sand;
+    if (yy < 0 || yy >= N || xx < 0 || xx >= N) {
+      out += sand;
+    }
+    else {
+      A[yy][xx] += sand;
+    }
+  }
+  A[to.y][to.x] -= sum;
+
+  if (to2.y < 0 || to2.y >= N || to2.x < 0 || to2.x >= N) {
+    out += A[to.y][to.x];
+  }
+  else {
+    A[to2.y][to2.x] += A[to.y][to.x];
+  }
+  A[to.y][to.x] = 0;
+
+  from = to;
+
+  blow(len - 1);
+}
+
+void input() {
+  scanf("%d", &N);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &A[i][j]);
+    }
+  }
+  from = { N / 2, N / 2 };
+}
 ```
 </details>
 
 ### 설명
+2차원 배열 위에서 특정 방향으로의 점 이동을 연습할 수 있는 문제
 
 ***
 
