@@ -4554,18 +4554,113 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 21610. 마법사 상어와 비바라기
+> https://www.acmicpc.net/problem/21610
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+const int dy[8] = { 0, -1, -1, -1, 0, 1, 1, 1 }, dx[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+struct Pos {
+  int y, x;
+  void move(int d, int s);
+};
+
+int N, M, d, s, A[50][50];
+bool moved[50][50];
+Pos clouds[2500]; int c_num;
+void input();
+
+void print(const char* str) {
+  printf("\n%s\n", str);
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      printf("%3d", A[y][x]);
+    }
+    printf("\n");
+  }
+}
+
+int main() {
+  input();
+
+  for (int turn = 0; turn < M; ++turn) {
+    scanf("%d %d", &d, &s);
+    --d; s %= N;
+    // 1. 구름 이동 && 2. 이동된 위치 표시 && 3. 물의 양 1 증가시키기
+    memset(moved, false, sizeof(moved));
+    for (int i = 0; i < c_num; ++i) {
+      Pos& c = clouds[i];
+      c.move(d, s);
+      ++A[c.y][c.x];
+      moved[c.y][c.x] = true;
+    }
+    // 4. 물복사버그 마법 시전
+    for (int i = 0; i < c_num; ++i) {
+      Pos& c = clouds[i];
+      int cnt = 0;
+      for (int d = 1; d <= 7; d += 2) {
+        int yy = c.y + dy[d], xx = c.x + dx[d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+        if (A[yy][xx] > 0) ++cnt;
+      }
+      A[c.y][c.x] += cnt;
+    }
+    // 5. 구름 사라짐
+    c_num = 0;
+    // 6. 구름 생김
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < N; ++x) {
+        if (moved[y][x]) continue;
+        if (A[y][x] >= 2) {
+          A[y][x] -= 2;
+          clouds[c_num++] = { y, x };
+        }
+      }
+    }
+  }
+
+  long long sum = 0;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      sum += A[y][x];
+    }
+  }
+
+  printf("%lld", sum);
+  return 0;
+}
+
+void Pos::move(int d, int s) {
+  y += dy[d] * s; x += dx[d] * s;
+  if (y < 0) y += N; if (y >= N) y -= N;
+  if (x < 0) x += N; if (x >= N) x -= N;
+}
+
+void input() {
+  scanf("%d %d", &N, &M);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &A[i][j]);
+    }
+  }
+  clouds[c_num++] = { N - 1, 0 };
+  clouds[c_num++] = { N - 1, 1 };
+  clouds[c_num++] = { N - 2, 0 };
+  clouds[c_num++] = { N - 2, 1 };
+}
 ```
 </details>
 
 ### 설명
+간단한 구현 문제
+
+최댓값이 정해져 있으므로, 최댓값만큼 전역 배열로 할당해 놓으면 빠르다.
 
 ***
 
