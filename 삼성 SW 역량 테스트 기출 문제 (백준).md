@@ -4664,18 +4664,161 @@ void input() {
 
 ***
 
-## 문제
-> 링크
+## 21611. 마법사 상어와 블리자드
+> https://www.acmicpc.net/problem/21611
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+void print(const char* str);
+
+const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { -1, 0, 1, 0 };
+int N, M, board[50][50], d, s;
+int* ptr[2500];
+int tmp[2500], exp_cnt[3];
+void input();
+
+void move();
+bool explode();
+void change();
+
+int main() {
+  input();
+  for (int turn = 0; turn < M; ++turn) {
+    scanf("%d %d", &d, &s);
+    if (d == 1) d = 3;
+    else if (d == 2) d = 1;
+    else if (d == 3) d = 0;
+    else d = 2;
+    // 1. 구슬 파괴
+    int y = N / 2, x = N / 2;
+    while (s--) {
+      y += dy[d]; x += dx[d];
+      board[y][x] = 0;
+    }
+    // 2. 구슬 이동
+    move();
+    // 3. 구슬 폭발
+    while (true) {
+      if (!explode()) {
+        break;
+      }
+      move();
+    }
+    // 4. 구슬 변경
+    change();
+  }
+
+  int ret = exp_cnt[0] + exp_cnt[1] * 2 + exp_cnt[2] * 3;
+  printf("%d", ret);
+
+  return 0;
+}
+
+void change() {
+  memset(tmp, 0, sizeof(tmp));
+  int idx = 1;
+  for (int i = 1; i < N * N; ) {
+    if (*ptr[i] == 0) break;
+    int j;
+    for (j = i; j + 1 < N * N && *ptr[i] == *ptr[j + 1]; ++j);
+    tmp[idx++] = j - i + 1;
+    if (idx == N * N) break;
+    tmp[idx++] = *ptr[i];
+    if (idx == N * N) break;
+    i = j + 1;
+  }
+  for (int i = 1; i < N * N; ++i) {
+    *ptr[i] = tmp[i];
+  }
+}
+
+bool explode() {
+  bool check = false;
+  for (int i = 1; i < N * N; ) {
+    if (*ptr[i] == 0) break;
+    int j;
+    for (j = i; j + 1 < N * N && *ptr[i] == *ptr[j + 1]; ++j);
+    if (j - i + 1 >= 4) {
+      check = true;
+      if (*ptr[i] <= 3) {
+        exp_cnt[*ptr[i] - 1] += j - i + 1;
+      }
+      for (int k = i; k <= j; ++k) {
+        *ptr[k] = 0;
+      }
+    }
+    i = j + 1;
+  }
+  return check;
+}
+
+void move() {
+  int btm = 1;
+  while (btm < N * N && *ptr[btm] != 0) ++btm;
+  for (int i = btm + 1; i < N * N; ++i) {
+    if (*ptr[i] == 0) continue;
+    *ptr[btm++] = *ptr[i];
+    *ptr[i] = 0;
+  }
+}
+
+void input() {
+  scanf("%d %d", &N, &M);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &board[i][j]);
+    }
+  }
+  int y = N / 2, x = N / 2, d = 0, idx = 0;
+  ptr[idx++] = &board[y][x];
+
+  for (int len = 1; ; ++len) {
+    for (int i = 0; i < len; ++i) {
+      y += dy[d]; x += dx[d];
+      ptr[idx++] = &board[y][x];
+    }
+    d = (d + 1) % 4;
+
+    for (int i = 0; i < len; ++i) {
+      y += dy[d]; x += dx[d];
+      ptr[idx++] = &board[y][x];
+    }
+    d = (d + 1) % 4;
+
+    if (len == N - 1) {
+      for (int i = 0; i < len; ++i) {
+        y += dy[d]; x += dx[d];
+        ptr[idx++] = &board[y][x];
+      }
+      break;
+    }
+  }
+}
+
+void print(const char* str) {
+  printf("\n%s\n", str);
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      printf("%3d", board[y][x]);
+    }
+    printf("\n");
+  }
+}
 ```
 </details>
 
 ### 설명
+복잡한 구현 문제.
+
+다시 푼 문제임에도 중간중간 실수가 많았다.
+
+void print(const char* str); 함수를 정의하여 중간중간 출력하며 디버깅을 꼭 해야한다.
 
 ***
 
