@@ -4373,18 +4373,184 @@ struct 및, 구조체 함수를 사용하면 간단하게 구현할 수 있다.
 
 ***
 
-## 문제
-> 링크
+## 21609. 상어 중학교
+> https://www.acmicpc.net/problem/21609
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+struct Pos {
+  int y, x;
+};
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
+int N, M, board[20][20], tmp[20][20], score;
+void input();
+
+vector<vector<Pos>> groups;
+
+bool discovered1[20][20]; // 전체 bfs 에서의 방문 여부 체크
+bool discovered2[20][20]; // 이번 bfs 에서의 방문 여부 체크
+void find_group();
+void bfs(int y, int x);
+
+void erase_group();
+void gravity();
+void rotate();
+
+void print(const char* str) {
+  printf("\n%s\n", str);
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      printf("%3d", board[y][x]);
+    }
+    printf("\n");
+  }
+}
+
+int main() {
+  input();
+
+  while (true) {
+    // 1. 블록 그룹 찾기
+    groups.clear();
+    find_group();
+    // 2. 그룹이 없으면 종료
+    if (groups.empty()) break;
+    // 3. 조건에 맞는 그룹 제거
+    erase_group();
+    // 4. 중력 작용
+    gravity();
+    // 5. 격자 반시계 회전
+    rotate();
+    // 6. 중력 작용
+    gravity();
+  }
+  printf("%d", score);
+  return 0;
+}
+
+void rotate() {
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      tmp[N - 1 - x][y] = board[y][x];
+    }
+  }
+  memcpy(board, tmp, sizeof(board));
+}
+
+void gravity() {
+  for (int x = 0; x < N; ++x) {
+    int btm = N - 1;
+    while (btm >= 0 && board[btm][x] != -2) --btm;
+    for (int y = btm - 1; y >= 0; --y) {
+      if (board[y][x] == -2) continue;
+      if (board[y][x] >= 0) {
+        board[btm--][x] = board[y][x];
+        board[y][x] = -2;
+      }
+      else {
+        btm = y - 1;
+        while (btm >= 0 && board[btm][x] != -2) --btm;
+        y = btm;
+      }
+    }
+  }
+}
+
+void erase_group() {
+  int max_group_size = 0;
+  for (auto& v : groups) {
+    max_group_size = max<int>(max_group_size, v.size());
+  }
+
+  vector<int> rbw_cnt(groups.size(), 0);
+  int max_rbw_cnt = 0;
+  for (int i = 0; i < groups.size(); ++i) {
+    auto& v = groups[i];
+    if (v.size() != max_group_size) continue; // 그룹의 크기가 max_group_size 인 그룹들로만 max_rbw_cnt 를 찾아야한다!!!!
+    for (auto& p : v) {
+      if (board[p.y][p.x] == 0) {
+        ++rbw_cnt[i];
+      }
+    }
+    max_rbw_cnt = max(max_rbw_cnt, rbw_cnt[i]);
+  }
+
+  for (int i = groups.size() - 1; i >= 0; --i) {
+    if (groups[i].size() == max_group_size && rbw_cnt[i] == max_rbw_cnt) {
+      for (auto& p : groups[i]) {
+        board[p.y][p.x] = -2;
+      }
+      score += groups[i].size() * groups[i].size();
+      return;
+    }
+  }
+}
+
+void find_group() {
+  memset(discovered1, false, sizeof(discovered1));
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (!discovered1[y][x] && board[y][x] >= 1) {
+        memset(discovered2, false, sizeof(discovered2));
+        bfs(y, x);
+      }
+    }
+  }
+}
+
+void bfs(int y, int x) {
+  queue<Pos> q;
+  vector<Pos> v;
+  int color = board[y][x];
+
+  discovered1[y][x] = discovered2[y][x] = true;
+  q.push({ y, x });
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    v.push_back(here);
+    for (int d = 0; d < 4; ++d) {
+      int yy = here.y + dy[d], xx = here.x + dx[d];
+      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+      if (board[yy][xx] == -1 || board[yy][xx] == -2) continue;
+      if (board[yy][xx] >= 1 && (discovered1[yy][xx] || board[yy][xx] != color)) continue;
+      if (board[yy][xx] == 0 && discovered2[yy][xx]) continue;
+      discovered1[yy][xx] = discovered2[yy][xx] = true;
+      q.push({ yy, xx });
+    }
+  }
+
+  if (v.size() >= 2) groups.push_back(v);
+}
+
+void input() {
+  scanf("%d %d", &N, &M);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      scanf("%d", &board[i][j]);
+    }
+  }
+}
 ```
 </details>
 
 ### 설명
+위 문제에서는 크기가 가장 큰 그룹을, 그러한 그룹이 여러개라면 무지개 블록이 제일 많은 그룹을, 그러한 그룹이 여러개라면 기준 블록이 가장 우측 하단에 있는 그룹을 찾아야 한다.
+
+간단하게 풀기 위해서 그룹의 최대 크기를 구한 후, 최대 크기를 갖는 그룹들 중에서 최대 무지개 블록 수를 구한 후, 기준 블록이 우측 하단에 있는 그룹부터 차례로 순회하며 그룹의 크기가 앞에서 구한 최대 크기이고, 무지개 블록의 개수가 앞에서 구한 최대 무지개 블록 개수인 그룹을 찾으면 된다.
+
+이때 최대 무지개 블록 수는 **최대 그룹 크기** 인 그룹들 중에서 구해야 한다는 것을 주의해야 한다.
 
 ***
 
