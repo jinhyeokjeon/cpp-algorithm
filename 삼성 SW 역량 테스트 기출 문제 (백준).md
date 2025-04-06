@@ -5138,18 +5138,159 @@ void print(const char* str) {
 
 ***
 
-## 문제
-> 링크
+## 23290. 마법사 상어와 복제
+> https://www.acmicpc.net/problem/23290
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+const int dy[8] = { 0, -1, -1, -1, 0, 1, 1, 1 }, dx[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+const int s_dy[4] = { -1, 0, 1, 0 }, s_dx[4] = { 0, -1, 0, 1 };
+int M, S, fish_num[4][4][8], tmp[4][4][8], copy_fish_num[4][4][8], smell[4][4], sy, sx;
+void input();
+
+void fish_move(int y, int x, int d);
+void shark_move();
+
+int main() {
+  input();
+  for (int turn = 0; turn < S; ++turn) {
+    // 1. 물고기 복제
+    memcpy(copy_fish_num, fish_num, sizeof(fish_num));
+
+    // 2. 물고기 이동
+    memset(tmp, 0, sizeof(tmp));
+    for (int y = 0; y < 4; ++y) {
+      for (int x = 0; x < 4; ++x) {
+        for (int d = 0; d < 8; ++d) {
+          if (fish_num[y][x][d] > 0) {
+            fish_move(y, x, d);
+          }
+        }
+      }
+    }
+    memcpy(fish_num, tmp, sizeof(fish_num));
+
+    // 3. 상어 이동
+    shark_move();
+
+    // 4. 냄새 사라짐
+    for (int y = 0; y < 4; ++y) {
+      for (int x = 0; x < 4; ++x) {
+        if (smell[y][x] > 0) {
+          --smell[y][x];
+        }
+      }
+    }
+
+    // 5. 복제 마법 완료
+    for (int y = 0; y < 4; ++y) {
+      for (int x = 0; x < 4; ++x) {
+        for (int d = 0; d < 8; ++d) {
+          fish_num[y][x][d] += copy_fish_num[y][x][d];
+        }
+      }
+    }
+  }
+
+  int sum = 0;
+  for (int y = 0; y < 4; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      for (int d = 0; d < 8; ++d) {
+        sum += fish_num[y][x][d];
+      }
+    }
+  }
+  printf("%d", sum);
+
+  return 0;
+}
+
+int visited_cnt[4][4], chosed[3], f_chosed[3], max_fish_num;
+int get_fish_num(int y, int x) {
+  int sum = 0;
+  for (int d = 0; d < 8; ++d) {
+    sum += fish_num[y][x][d];
+  }
+  return sum;
+}
+void dfs(int idx, int y, int x, int sum) {
+  if (idx == 3) {
+    if (max_fish_num < sum) {
+      max_fish_num = sum;
+      memcpy(f_chosed, chosed, sizeof(chosed));
+    }
+    return;
+  }
+  for (int d = 0; d < 4; ++d) {
+    int yy = y + s_dy[d], xx = x + s_dx[d];
+    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4) continue;
+    chosed[idx] = d;
+    ++visited_cnt[yy][xx];
+    dfs(idx + 1, yy, xx, sum + (visited_cnt[yy][xx] == 1 ? get_fish_num(yy, xx) : 0));
+    --visited_cnt[yy][xx];
+  }
+}
+void shark_move() {
+  memset(visited_cnt, 0, sizeof(visited_cnt));
+  max_fish_num = -1;
+  dfs(0, sy, sx, 0);
+
+  for (int i = 0; i < 3; ++i) {
+    sy += s_dy[f_chosed[i]];
+    sx += s_dx[f_chosed[i]];
+    for (int d = 0; d < 8; ++d) {
+      if (fish_num[sy][sx][d] > 0) {
+        fish_num[sy][sx][d] = 0;
+        smell[sy][sx] = 3;
+      }
+    }
+  }
+}
+
+void fish_move(int y, int x, int d) {
+  int yy, xx, dd = d;
+  for (int i = 0; i < 8; ++i) {
+    yy = y + dy[dd], xx = x + dx[dd];
+    if (0 <= yy && yy < 4 && 0 <= xx && xx < 4 && smell[yy][xx] == 0 && !(yy == sy && xx == sx)) {
+      tmp[yy][xx][dd] += fish_num[y][x][d];
+      return;
+    }
+    dd = (dd + 7) % 8;
+  }
+  tmp[y][x][d] += fish_num[y][x][d];
+}
+
+void input() {
+  scanf("%d %d", &M, &S);
+  for (int i = 0; i < M; ++i) {
+    int y, x, d;
+    scanf("%d %d %d", &y, &x, &d);
+    ++fish_num[y - 1][x - 1][d - 1];
+  }
+  scanf("%d %d", &sy, &sx);
+  --sy; --sx;
+}
 ```
 </details>
 
 ### 설명
+문제를 코드로 옮길 때, 코드를 작성한 후 꼭 **문제에서 설명한 대로가 맞는지** 확인해야 한다.
+
+이 문제에서는 물고기가 **상어의 위치** 로 이동하지 못한다는 조건이 있었는데, 빼먹었었다.
+
+또한 문제에서 **상한값** 을 주어준다면, 왜 주었을지를 잘 생각해야 한다.
+
+이 문제에서는 '격자 위에 있는 물고기의 수가 항상 1,000,000 이하인 입력만 주어진다.' 라고 하였는데,
+
+이를 이용하면 물고기 수 배열을 int[4][4][8] 로 선언하면 (y, x) 에서의 dir 에 해당하는 물고기의 총 개수를 담을 수 있다. (1,000,000 이하임을 알고 있으므로 int에 담을 수 있음.)
+
+dfs 에서 같은 정점을 여러번 방문할 수 있지만, 첫 번째 방문에서만 특정 행동을 수행하게 하려면 visited를 int 배열로 만든 후, 0일 때만 그 행동을 수행하게 하면 된다.
 
 ***
 
