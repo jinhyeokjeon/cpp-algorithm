@@ -4822,18 +4822,137 @@ void print(const char* str); 함수를 정의하여 중간중간 출력하며 �
 
 ***
 
-## 문제
-> 링크
+## 주사위 굴리기 2
+> https://www.acmicpc.net/problem/23288
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+#include <queue>
+using namespace std;
+
+void print(const char* str);
+
+struct Pos { int y, x; };
+enum Face { up, down, front, rgt, back, lft };
+const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { 1, 0, -1, 0 };
+int dice[6] = { 1, 6, 5, 3, 2, 4 };
+Pos pos;
+int N, M, K, d_d, score;
+char board[20][20];
+void input();
+
+void move_dice();
+
+bool discovered[20][20];
+int get_score(int y, int x);
+
+int main() {
+  input();
+  for (int turn = 0; turn < K; ++turn) {
+    // 1. 주사위 굴러가기
+    move_dice();
+    // 2. 점수 획득
+    score += board[pos.y][pos.x] * get_score(pos.y, pos.x);
+    // 3. 방향 전환
+    if (dice[down] > board[pos.y][pos.x]) {
+      d_d = (d_d + 1) % 4;
+    }
+    else if (dice[down] < board[pos.y][pos.x]) {
+      d_d = (d_d + 3) % 4;
+    }
+  }
+
+  printf("%d", score);
+  return 0;
+}
+
+int get_score(int y, int x) {
+  memset(discovered, false, sizeof(discovered));
+  queue<Pos> q;
+  int ret = 0;
+
+  discovered[y][x] = true;
+  q.push({ y, x });
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop(); ++ret;
+    for (int d = 0; d < 4; ++d) {
+      int yy = here.y + dy[d], xx = here.x + dx[d];
+      if (yy < 0 || yy >= N || xx < 0 || xx >= M) continue;
+      if (discovered[yy][xx] || board[yy][xx] != board[here.y][here.x]) continue;
+      discovered[yy][xx] = true;
+      q.push({ yy, xx });
+    }
+  }
+
+  return ret;
+}
+
+void move_dice() {
+  int yy = pos.y + dy[d_d], xx = pos.x + dx[d_d];
+  if (yy < 0 || yy >= N || xx < 0 || xx >= M) {
+    d_d = (d_d + 2) % 4;
+    move_dice();
+    return;
+  }
+  // 1. 주사위 좌표 이동
+  pos = { yy, xx };
+  // 2. 주사위 위 숫자 변경
+  int tmp[6];
+  memcpy(tmp, dice, sizeof(dice));
+  if (d_d == 0) { // 오른쪽으로 구름
+    tmp[down] = dice[rgt];
+    tmp[rgt] = dice[up];
+    tmp[up] = dice[lft];
+    tmp[lft] = dice[down];
+  }
+  else if (d_d == 1) { // 아래로 구름
+    tmp[up] = dice[back];
+    tmp[front] = dice[up];
+    tmp[down] = dice[front];
+    tmp[back] = dice[down];
+  }
+  else if (d_d == 2) { // 왼쪽으로 구름
+    tmp[down] = dice[lft];
+    tmp[rgt] = dice[down];
+    tmp[up] = dice[rgt];
+    tmp[lft] = dice[up];
+  }
+  else { // 위로 구름
+    tmp[up] = dice[front];
+    tmp[front] = dice[down];
+    tmp[down] = dice[back];
+    tmp[back] = dice[up];
+  }
+  memcpy(dice, tmp, sizeof(dice));
+}
+
+void input() {
+  scanf("%d %d %d", &N, &M, &K);
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < M; ++j) {
+      scanf("%hhd", &board[i][j]);
+    }
+  }
+}
+
+void print(const char* str) {
+  printf("\n%s\n", str);
+  printf("Up: %d, Down: %d, Front: %d, Right: %d, Back: %d, Left: %d\n", dice[up], dice[down], dice[front], dice[rgt], dice[back], dice[lft]);
+  printf("y: %d, x: %d, score: %d\n", pos.y, pos.x, score);
+}
 ```
 </details>
 
 ### 설명
+구현 + bfs 문제.
+
+enum 을 사용하면 헷갈리지 않고 코드를 작성할 수 있다.
 
 ***
 
