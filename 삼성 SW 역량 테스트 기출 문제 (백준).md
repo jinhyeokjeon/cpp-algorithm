@@ -4956,18 +4956,185 @@ enum 을 사용하면 헷갈리지 않고 코드를 작성할 수 있다.
 
 ***
 
-## 문제
-> 링크
+## 23289. 온풍기 안녕!
+> https://www.acmicpc.net/problem/23289
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+void print(const char* str);
+
+struct Pos { int y, x; };
+const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { 1, 0, -1, 0 }; // 오, 아래, 왼, 위
+
+int R, C, K, W, board[20][20], heat[20][20], tmp[20][20];
+bool wall[20][20][20][20];
+Pos check_list[400]; int check_num;
+void input();
+bool range(int y, int x);
+void set_heater(int y, int x, int d);
+
+void adjust();
+bool inspect();
+
+int main() {
+  input();
+
+  for (int cho = 1; cho <= 100; ++cho) {
+    // 1. 온풍기에서 바람 나옴
+    for (int y = 0; y < R; ++y) {
+      for (int x = 0; x < C; ++x) {
+        board[y][x] += heat[y][x];
+      }
+    }
+    // 2. 온도 조절
+    adjust();
+    // 3. 가장 바깥쪽 1 감소
+    for (int y = 0; y < R; ++y) {
+      if (board[y][0] >= 1) --board[y][0];
+      if (board[y][C - 1] >= 1) --board[y][C - 1];
+    }
+    for (int x = 1; x < C - 1; ++x) {
+      if (board[0][x] >= 1) --board[0][x];
+      if (board[R - 1][x] >= 1) --board[R - 1][x];
+    }
+    // 4. 검사
+    if (inspect()) {
+      printf("%d", cho);
+      return 0;
+    }
+  }
+  printf("101");
+  return 0;
+}
+
+bool inspect() {
+  for (int i = 0; i < check_num; ++i) {
+    Pos& p = check_list[i];
+    if (board[p.y][p.x] < K) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void adjust() {
+  memset(tmp, 0, sizeof(tmp));
+  for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < C; ++x) {
+      tmp[y][x] += board[y][x];
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (!range(yy, xx) || wall[y][x][yy][xx] || board[yy][xx] >= board[y][x]) continue;
+        int val = (board[y][x] - board[yy][xx]) / 4;
+        tmp[y][x] -= val;
+        tmp[yy][xx] += val;
+      }
+    }
+  }
+  memcpy(board, tmp, sizeof(board));
+}
+
+void input() {
+  scanf("%d %d %d", &R, &C, &K);
+  for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < C; ++x) {
+      scanf("%d", &tmp[y][x]);
+    }
+  }
+  scanf("%d", &W);
+  for (int i = 0; i < W; ++i) {
+    int y, x, t;
+    scanf("%d %d %d", &y, &x, &t);
+    --y; --x;
+    if (t == 0) {
+      wall[y][x][y - 1][x] = wall[y - 1][x][y][x] = true; // 주의!!
+    }
+    else {
+      wall[y][x][y][x + 1] = wall[y][x + 1][y][x] = true;
+    }
+  }
+
+  for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < C; ++x) {
+      if (1 <= tmp[y][x] && tmp[y][x] <= 4) {
+        if (tmp[y][x] == 1) set_heater(y, x, 0);
+        else if (tmp[y][x] == 2) set_heater(y, x, 2);
+        else if (tmp[y][x] == 3) set_heater(y, x, 3);
+        else if (tmp[y][x] == 4) set_heater(y, x, 1);
+      }
+      else if (tmp[y][x] == 5) {
+        check_list[check_num++] = { y, x };
+      }
+    }
+  }
+}
+
+bool range(int y, int x) { return 0 <= y && y < R && 0 <= x && x < C; }
+
+bool visited[20][20];
+void set_heater(int y, int x, int ld, int d, int rd, int v) {
+  if (v == 0 || visited[y][x]) return;
+  visited[y][x] = true;
+
+  int y1, x1, y2, x2;
+  // 1. 온도 상승
+  heat[y][x] += v;
+  // 2. 좌측 대각 확인
+  y1 = y + dy[ld]; x1 = x + dx[ld];
+  y2 = y1 + dy[d]; x2 = x1 + dx[d];
+  if (range(y1, x1) && range(y2, x2) && !wall[y][x][y1][x1] && !wall[y1][x1][y2][x2]) {
+    set_heater(y2, x2, ld, d, rd, v - 1);
+  }
+  // 3. 정면 확인
+  y1 = y + dy[d]; x1 = x + dx[d];
+  if (range(y1, x1) && !wall[y][x][y1][x1]) {
+    set_heater(y1, x1, ld, d, rd, v - 1);
+  }
+  // 4. 우측 대각 확인
+  y1 = y + dy[rd]; x1 = x + dx[rd];
+  y2 = y1 + dy[d]; x2 = x1 + dx[d];
+  if (range(y1, x1) && range(y2, x2) && !wall[y][x][y1][x1] && !wall[y1][x1][y2][x2]) {
+    set_heater(y2, x2, ld, d, rd, v - 1);
+  }
+}
+
+void set_heater(int y, int x, int d) {
+  memset(visited, false, sizeof(visited));
+  int ld = (d + 3) % 4, rd = (d + 1) % 4;
+  int yy = y + dy[d], xx = x + dx[d];
+  if (range(yy, xx)) {
+    set_heater(yy, xx, ld, d, rd, 5);
+  }
+}
+
+void print(const char* str) {
+  printf("\n%s\n", str);
+  for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < C; ++x) {
+      printf("%3d", board[y][x]);
+    }
+    printf("\n");
+  }
+}
 ```
 </details>
 
 ### 설명
+복잡한 구현 문제.
+
+한 기능을 완성할 때마다 출력하며 디버깅해야한다.
+
+2차원 배열에서의 방향과 이동의 관계를 연습할 수 있는 문제.
+
+**wall[y1][x1][y2][x2] 가 true 면 wall[y2][x2][y1][x1] 도 참이어야 한다.**
+
+   입력에서 한 방향만 주어지지만, 양쪽 방향 다 체크해놓아야 할 때 주의하자.
 
 ***
 
