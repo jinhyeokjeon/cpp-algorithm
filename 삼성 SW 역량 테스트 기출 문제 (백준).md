@@ -5294,17 +5294,187 @@ dfs 에서 같은 정점을 여러번 방문할 수 있지만, 첫 번째 방문
 
 ***
 
-## 문제
-> 링크
+## 23291. 어항 정리
+> https://www.acmicpc.net/problem/23291
 
 ### 코드
 <details>
 <summary>C++</summary>
 
 ```cpp
+#include <cstdio>
+#include <cstring>
+
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#define max(a, b) ((a) > (b) ? (a) : (b))
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
+int N, K, arr[100][100], tmp[100][100], min_v, max_v;
+void input();
+
+void calc_min_max();
+void calc1();
+void calc2();
+void calc3();
+void calc4();
+
+void print(const char* s);
+
+int main() {
+  input();
+  for (int turn = 0; ; ++turn) {
+    // 1. min_v, max_v 값 계산
+    calc_min_max();
+    // 2. 종료 조건
+    if (max_v - min_v <= K) {
+      printf("%d", turn);
+      break;
+    }
+    // 3. 어항 정리
+    for (int i = 0; i < N; ++i) {
+      if (arr[0][i] == min_v) {
+        ++arr[0][i];
+      }
+    }
+    // 4. 어항 쌓기 1
+    calc1();
+    // 5. 물고기 수 조절
+    calc2();
+    // 6. 일렬로 놓기
+    calc3();
+    // 7. 어항 쌓기 2
+    calc4();
+    // 8. 물고기 수 조절
+    calc2();
+    // 9. 일렬로 놓기
+    calc3();
+  }
+  return 0;
+}
+
+void calc4() {
+  int l = 0, r = N / 2 + N / 4;
+  for (int y = 1; y < 4; ++y) {
+    if (y % 2) {
+      for (int i = 0; i < N / 4; ++i) {
+        arr[y][N - 1 - i] = arr[0][l + i];
+        arr[0][l + i] = 0;
+      }
+    }
+    else {
+      for (int i = 0; i < N / 4; ++i) {
+        arr[y][N / 2 + N / 4 + i] = arr[0][l + i];
+        arr[0][l + i] = 0;
+      }
+    }
+    l += N / 4;
+  }
+}
+
+void calc3() {
+  for (int i = 0; i < N; ++i) {
+    tmp[0][i] = 0;
+  }
+
+  int idx = 0;
+  for (int x = 0; x < N; ++x) {
+    for (int y = 0; y < N; ++y) {
+      if (arr[y][x] == 0) break;
+      tmp[0][idx++] = arr[y][x];
+      arr[y][x] = 0;
+    }
+  }
+
+  for (int i = 0; i < N; ++i) {
+    arr[0][i] = tmp[0][i];
+  }
+}
+
+void calc2() {
+  memcpy(tmp, arr, sizeof(arr));
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (arr[y][x] == 0) continue;
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N || arr[yy][xx] == 0) continue;
+        if (arr[y][x] > arr[yy][xx]) {
+          int v = (arr[y][x] - arr[yy][xx]) / 5;
+          tmp[y][x] -= v;
+          tmp[yy][xx] += v;
+        }
+      }
+    }
+  }
+  memcpy(arr, tmp, sizeof(arr));
+}
+
+void calc1() {
+  int l = 0, y = 1, x = 1;
+  while (true) {
+    int r = l + x;
+    if (r + y - 1 >= N) break;
+    for (int i = 0; i < y; ++i) {
+      for (int j = 0; j < x; ++j) {
+        arr[1 + x - 1 - j][r + i] = arr[i][l + j];
+        arr[i][l + j] = 0;
+      }
+    }
+    if (y == x) ++y;
+    else ++x;
+    l = r;
+  }
+}
+
+void calc_min_max() {
+  min_v = max_v = arr[0][0];
+  for (int i = 1; i < N; ++i) {
+    min_v = min(min_v, arr[0][i]);
+    max_v = max(max_v, arr[0][i]);
+  }
+}
+
+void input() {
+  scanf("%d %d", &N, &K);
+  min_v = 987654321, max_v = 0;
+  for (int i = 0; i < N; ++i) {
+    scanf("%d", &arr[0][i]);
+  }
+}
+
+void print(const char* str) {
+  printf("\n%s\n", str);
+  for (int i = N - 1; i >= 0; --i) {
+    for (int j = 0; j < N; ++j) {
+      printf("%3d", arr[i][j]);
+    }
+    printf("\n");
+  }
+}
 ```
 </details>
 
 ### 설명
+복잡한 구현 문제.
+
+어떤 2차원 배열의 일부를 회전하여 다른 곳에 옮겨 붙일 때에는,
+
+0부터 시작하는 인덱스를 회전 대상에 부여하여 회전했을때의 인덱스를 구한 후,
+
+옮겨 붙이는 시작 인덱스에 더하여 주면 된다.
+
+```cpp
+for (int i = 0; i < y; ++i) {
+  for (int j = 0; j < x; ++j) {
+    arr[1 + x - 1 - j][r + i] = arr[i][l + j];
+    arr[i][l + j] = 0;
+  }
+}
+```
+
+위 코드는, (0, l) 부터 y행 x 열의 도형을 시계방향으로 회전시켜 (1, r) 으로 이동시키는 코드이다.
+
+따라서 (0 + i, l + j) -> (1 + x - 1 - j, i) 이 되게 된다.
 
 ***
