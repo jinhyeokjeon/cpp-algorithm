@@ -7,114 +7,126 @@
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
-#include <algorithm>
+#include <iostream>
+#include <cmath>
 using namespace std;
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
 
 struct Pos {
   int y, x;
   bool operator==(const Pos& rhs) const {
     return y == rhs.y && x == rhs.x;
   }
-  bool operator!=(const Pos& rhs) const {
-    return !(y == rhs.y && x == rhs.x);
+  int dist(const Pos& rhs) const {
+    return abs(y - rhs.y) + abs(x - rhs.x);
   }
 };
 
-const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+struct Info {
+  Pos red, blue;
+  bool move(int dir);
+};
 
 int N, M;
 char board[10][10];
-Pos red, blue, hole;
-void input();
+Pos hole;
+void init(Info& info);
 
-int ret = 11;
-void dfs(int d);
-void lean(int dir);
+int answer = 11;
+void dfs(Info& info, int cnt);
 
 int main() {
-  input();
-  dfs(1);
-  printf("%d", (ret == 11 ? -1 : ret));
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+  Info info;
+  init(info);
+  dfs(info, 0);
+  cout << (answer == 11 ? -1 : answer) << '\n';
   return 0;
 }
 
-void dfs(int d) {
-  if (d >= ret) return;
-  Pos red_t = red, blue_t = blue;
+void dfs(Info& info, int cnt) {
+  if (cnt >= answer) return;
+  if (info.red == hole) {
+    answer = cnt;
+    return;
+  }
   for (int dir = 0; dir < 4; ++dir) {
-    lean(dir);
-    if (red == red_t && blue == blue_t) continue;
-    if (blue != hole) {
-      if (red == hole) {
-        ret = min(ret, d);
-        return;
-      }
-      else {
-        dfs(d + 1);
-      }
+    Info moved = info;
+    if (moved.move(dir)) {
+      dfs(moved, cnt + 1);
     }
-    red = red_t; blue = blue_t;
   }
 }
 
-void lean(int dir) {
-  bool red_first = dir < 2 ? (dir == 0 ? red.y < blue.y : red.y > blue.y) : (dir == 2 ? red.x < blue.x : red.x > blue.x);
+bool Info::move(int dir) {
+  Pos n_red = red, n_blue = blue;
 
-  while (red.y < N - 1 && red.x < M - 1 && board[red.y][red.x] != '#' && red != hole) {
-    red.y += dy[dir]; red.x += dx[dir];
+  // move red
+  while (board[n_red.y + dy[dir]][n_red.x + dx[dir]] != '#') {
+    n_red.y += dy[dir];
+    n_red.x += dx[dir];
+    if (n_red == hole) break;
   }
-  while (blue.y < N - 1 && blue.x < M - 1 && board[blue.y][blue.x] != '#' && blue != hole) {
-    blue.y += dy[dir]; blue.x += dx[dir];
+
+  // move blue
+  while (board[n_blue.y + dy[dir]][n_blue.x + dx[dir]] != '#') {
+    n_blue.y += dy[dir];
+    n_blue.x += dx[dir];
+    if (n_blue == hole) return false;
   }
 
-  if (blue == hole || red == hole) return;
-
-  red.y -= dy[dir]; red.x -= dx[dir];
-  blue.y -= dy[dir]; blue.x -= dx[dir];
-
-  if (red == blue) {
-    if (red_first) {
-      blue.y -= dy[dir]; blue.x -= dx[dir];
+  if (n_red == n_blue) {
+    if (red.dist(n_red) > blue.dist(n_blue)) {
+      n_red.y -= dy[dir];
+      n_red.x -= dx[dir];
     }
     else {
-      red.y -= dy[dir]; red.x -= dx[dir];
+      n_blue.y -= dy[dir];
+      n_blue.x -= dx[dir];
     }
   }
+
+  if (red == n_red && blue == n_blue) {
+    return false;
+  }
+
+  blue = n_blue;
+  red = n_red;
+  return true;
 }
 
-void input() {
-  scanf("%d %d", &N, &M);
-  getchar();
-
+void init(Info& info) {
+  cin >> N >> M;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < M; ++j) {
-      char ch; scanf("%c", &ch);
-      board[i][j] = ch;
-      if (ch == 'R') {
-        red = { i, j };
+      cin >> board[i][j];
+      if (board[i][j] == 'R') {
+        info.red = { i, j };
+        board[i][j] = '.';
       }
-      else if (ch == 'B') {
-        blue = { i, j };
+      else if (board[i][j] == 'B') {
+        info.blue = { i, j };
+        board[i][j] = '.';
       }
-      else if (ch == 'O') {
+      else if (board[i][j] == 'O') {
         hole = { i, j };
+        board[i][j] = '.';
       }
     }
-    getchar();
   }
 }
 ```
 </details>
 
 ### 설명
-1. red와 blue 값을 매개변수로 넘기지 않고, 보드를 기울이기 전에 red와 blue 값을 저장해두면 전역변수로 사용할 수 있다. 
+1. 전역변수로 상태를 저장하는 것보다 상태를 복사하고, 복사한 상태에 필요한 작업을 수행한 뒤 참조 형태로 재귀호출하는 것이 더 직관적이다.
 
-   => dfs 함수에 매개변수로 넘기지 않고 깔끔하게 작성 가능하다.
-2. 보드를 같은 방향으로 연속해서 두 번 이상 기울이는건 의미 없다. 
+2. 재귀호출을 하며 상태를 저장할 때 스택 오버플로우를 고려하여 상태를 힙에 저장하는 방법을 종종 사용했었는데 그럴 필요 없다. dfs의 동작 원리를 생각해보면 상태는 dfs의 최대 깊이 만큼만 생기고, 이 문제에서는 최대 깊이가 10이므로 스택에는 Info 구조체가 최대 10개만 쌓인다.
 
-   => 가지치기.
+3. 보드를 같은 방향으로 연속해서 두 번 이상 기울이는건 의미 없다. 
+=> 가지치기.
 
 ***
 
