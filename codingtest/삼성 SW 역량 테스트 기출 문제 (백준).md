@@ -138,92 +138,98 @@ void init(Info& info) {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
-
-#define max(a, b) ((a) > (b) ? (a) : (b))
+#include <iostream>
+#include <algorithm>
+using namespace std;
 
 struct Info {
   int board[20][20];
   void rotate();
-  void move();
-  void calc();
+  bool up();
 };
-int tmp[20][20];
-
-int N;
 Info info;
-void input();
+int N;
+
+void init();
 
 int ret;
-void dfs(int depth);
+void dfs(Info& info, int cnt);
 
 int main() {
-  input();
-  dfs(0);
-  printf("%d", ret);
+  init();
+  dfs(info, 0);
+  cout << ret;
   return 0;
 }
 
-void dfs(int depth) {
-  if (depth == 5) {
-    info.calc();
+void dfs(Info& info, int cnt) {
+  if (cnt == 5) {
+    for (int i = 0; i < N; ++i) {
+      for (int j = 0; j < N; ++j) {
+        ret = max(ret, info.board[i][j]);
+      }
+    }
     return;
   }
-  Info saved = info;
-  for (int i = 0; i < 4; ++i) {
-    info = saved;
-    info.move();
-    dfs(depth + 1);
-    saved.rotate();
-  }
-}
-
-void Info::calc() {
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      ret = max(ret, board[i][j]);
+  for (int r = 0; r < 4; ++r) {
+    Info moved = info;
+    if (moved.up()) {
+      dfs(moved, cnt + 1);
     }
+    info.rotate();
   }
 }
 
-void Info::move() {
+bool Info::up() {
+  bool moved = false;
   for (int x = 0; x < N; ++x) {
-    int btm = N - 1;
-    for (int y = N - 2; y >= 0; --y) {
+    int top = 0;
+    for (int y = 1; y < N; ++y) {
       if (board[y][x] == 0) continue;
-      if (board[btm][x] == 0) {
-        int n = board[y][x];
+      if (board[top][x] == 0) {
+        board[top][x] = board[y][x];
         board[y][x] = 0;
-        board[btm][x] = n;
+        moved = true;
       }
-      else if (board[btm][x] == board[y][x]) {
-        board[btm--][x] *= 2;
+      else if (board[top][x] == board[y][x]) {
+        board[top++][x] *= 2;
         board[y][x] = 0;
+        moved = true;
       }
       else {
-        int n = board[y][x];
-        board[y][x] = 0;
-        board[--btm][x] = n;
+        board[++top][x] = board[y][x];
+        if (top != y) {
+          board[y][x] = 0;
+          moved = true;
+        }
       }
     }
   }
+  return moved;
 }
 
 void Info::rotate() {
+  int tmp[20][20];
   for (int y = 0; y < N; ++y) {
     for (int x = 0; x < N; ++x) {
       tmp[x][N - 1 - y] = board[y][x];
     }
   }
-  memcpy(board, tmp, sizeof(board));
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      board[y][x] = tmp[y][x];
+    }
+  }
 }
 
-void input() {
-  scanf("%d", &N);
+void init() {
+  ios::sync_with_stdio(false);
+  cin.tie(NULL);
+  cin >> N;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
-      scanf("%d", &info.board[i][j]);
+      cin >> info.board[i][j];
+      ret = max(ret, info.board[i][j]);
     }
   }
 }
@@ -232,8 +238,10 @@ void input() {
 
 ### 설명
 1. 가장 큰 블록만을 출력하면 되는 문제이므로, 보드를 회전하여도 상관 없다. 따라서 보드를 회전시키며 블록을 이동하면, 한 쪽 방향으로 이동하는 부분만 구현하면 된다.
-2. Info 값을 매개변수로 넘기는게 아니라, 전역변수로 설정하고 재귀호출 전에 미리 저장해놓는 방식으로 구현하면 코드가 훨씬 깔끔해진다.
-3. 보드를 Info struct 에 집어넣고, 보드의 회전, 블록의 이동, 가장 큰 블록 구하기 연산을 구조체 함수로 구현하면 코드가 깔끔하다.
+2. info 복사 -> 필요한 작업 수행 -> 재귀 호출 하는것이 더 직관적이다.
+3. 보드를 Info struct 에 집어넣고, 보드의 회전, 블록의 이동 연산을 구조체 함수로 구현하면 코드가 깔끔하다.
+4. **경우의 수가 많고 복잡한 문제: 각 경우마다 (if문마다)의 예시 손으로 써가면서 확인하기**
+   -> 여기서는 if (board[btm][x] == 0), else if (board[btm][x] == board[y][x]), else 각각에서의 예시 써가면서 코드 짜면 편리하다.
 
 ***
 
