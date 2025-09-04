@@ -372,73 +372,59 @@ int main() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+using namespace std;
 
 const int dy[4] = { 0, 0, -1, 1 }, dx[4] = { 1, -1, 0, 0 };
-int N, M, K, y, x, d;
-char dice[6]; //  (주사위 면) 0: 위, 1: 아래, 2: 앞, 3: 오, 4: 뒤, 5: 왼
-char to[6][4]; // (주사위 면 / 방향) 0: 오, 1: 왼, 2: 위, 3: 아
-char board[20][20];
-void input();
 
+int N, M, y, x, K;
+int board[20][20];
 void init();
-void move();
+
+struct Dice {
+  int up, down, front, right, back, left;
+};
+
+Dice roll(Dice& dice, int d) {
+  switch (d) {
+  case 0: return { dice.left, dice.right, dice.front, dice.up, dice.back, dice.down };
+  case 1: return { dice.right, dice.left, dice.front, dice.down, dice.back, dice.up };
+  case 2: return { dice.front, dice.back, dice.down, dice.right, dice.up, dice.left };
+  case 3: return { dice.back, dice.front, dice.up, dice.right, dice.down, dice.left };
+  default: return {};
+  }
+}
 
 int main() {
   init();
-  input();
-  while (K--) {
-    scanf("%d", &d); --d;
-    move();
+  Dice dice = { 0, 0, 0, 0, 0, 0 };
+
+  for (int i = 0; i < K; ++i) {
+    int d; cin >> d; --d;
+    int yy = y + dy[d], xx = x + dx[d];
+    if (yy < 0 || yy >= N || xx < 0 || xx >= M) continue;
+    y = yy; x = xx;
+    dice = roll(dice, d);
+    if (board[y][x] == 0) {
+      board[y][x] = dice.down;
+    }
+    else {
+      dice.down = board[y][x];
+      board[y][x] = 0;
+    }
+    cout << dice.up << '\n';
   }
   return 0;
 }
 
-void move() {
-  // 주사위 좌표 이동
-  int yy = y + dy[d], xx = x + dx[d];
-  if (yy < 0 || yy >= N || xx < 0 || xx >= M) return;
-  y = yy; x = xx;
-
-  // 주사위 회전
-  char tmp[6];
-  for (int i = 0; i < 6; ++i) {
-    tmp[to[i][d]] = dice[i];
-  }
-  for (int i = 0; i < 6; ++i) {
-    dice[i] = tmp[i];
-  }
-
-  // 칸과 상호작용
-  if (board[y][x] == 0) {
-    board[y][x] = dice[1];
-  }
-  else {
-    dice[1] = board[y][x];
-    board[y][x] = 0;
-  }
-
-  printf("%hhd\n", dice[0]);
-}
-
 void init() {
-  // to[i][j] = k
-  // i: 0위 1아 2앞 3오 4뒤 5왼 (주사위 면)
-  // j: 0오 1왼 2위 3아 (이동 방향)
-  // k: 0위 1아 2앞 3오 4뒤 5왼 (주사위 면) 
-  to[0][0] = 3; to[0][1] = 5; to[0][2] = 4; to[0][3] = 2;
-  to[1][0] = 5; to[1][1] = 3; to[1][2] = 2; to[1][3] = 4;
-  to[2][0] = 2; to[2][1] = 2; to[2][2] = 0; to[2][3] = 1;
-  to[3][0] = 1; to[3][1] = 0; to[3][2] = 3; to[3][3] = 3;
-  to[4][0] = 4; to[4][1] = 4; to[4][2] = 1; to[4][3] = 0;
-  to[5][0] = 0; to[5][1] = 1; to[5][2] = 5; to[5][3] = 5;
-}
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
 
-void input() {
-  scanf("%d %d %d %d %d", &N, &M, &y, &x, &K);
+  cin >> N >> M >> y >> x >> K;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < M; ++j) {
-      scanf("%hhd", &board[i][j]);
+      cin >> board[i][j];
     }
   }
 }
@@ -447,9 +433,7 @@ void input() {
 
 ### 설명
 1. 주석을 잘 활용하자.
-2. char 변수는 scanf에서는 %hhd, printf에서는 %d 사용한다.
-3. unsigned char 변수는 scanf 에서는 %hhu, printf에서는 %u 사용한다.
-4. unsigned int 변수는 scanf 에서는 %u, printf에서는 %u 사용한다.
+2. 코드 조금 길어지더라도 안헷갈리게 쓰는게 중요하다.
 
 ***
 
