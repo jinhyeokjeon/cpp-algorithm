@@ -1112,64 +1112,74 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
 #include <cstring>
+using namespace std;
 
+char state[4][9];
 int K;
-char wheel[4][9];
+void init();
 
 bool rotated[4];
-void rotate(int num, int dir);
+void rotate(int idx, int dir);
 
 int main() {
-	for (int i = 0; i < 4; ++i) {
-		scanf("%s", wheel[i]);
-	}
-	scanf("%d", &K);
+  init();
 
-	while (K--) {
-		int num, dir;
-		scanf("%d %d", &num, &dir);
-		--num;
-		memset(rotated, false, sizeof(rotated));
-		rotate(num, dir);
-	}
+  while (K--) {
+    int idx, dir;
+    cin >> idx >> dir;
+    --idx;
+    memset(rotated, false, sizeof(rotated));
+    rotate(idx, dir);
+  }
 
-	int score = 0;
-	if (wheel[0][0] == '1') score += 1;
-	if (wheel[1][0] == '1') score += 2;
-	if (wheel[2][0] == '1') score += 4;
-	if (wheel[3][0] == '1') score += 8;
-	printf("%d", score);
-	return 0;
+  int ret = 0;
+  if (state[0][0] == '1') ret += 1;
+  if (state[1][0] == '1') ret += 2;
+  if (state[2][0] == '1') ret += 4;
+  if (state[3][0] == '1') ret += 8;
+
+  cout << ret;
+
+  return 0;
 }
 
-void rotate(int num, int dir) {
-	rotated[num] = true;
-	char tmp;
-	int l = num - 1, r = num + 1;
+void rotate(int idx, int dir) {
+  rotated[idx] = true;
 
-	if (0 <= l && wheel[l][2] != wheel[num][6] && !rotated[l]) {
-		rotate(l, dir * -1);
-	}
-	if (r < 4 && wheel[num][2] != wheel[r][6] && !rotated[r]) {
-		rotate(r, dir * -1);
-	}
+  char tmp[8];
+  if (dir == 1) {
+    tmp[0] = state[idx][7];
+    for (int i = 0; i < 7; ++i) {
+      tmp[i + 1] = state[idx][i];
+    }
+  }
+  else {
+    tmp[7] = state[idx][0];
+    for (int i = 1; i < 8; ++i) {
+      tmp[i - 1] = state[idx][i];
+    }
+  }
 
-	if (dir == 1) {
-		tmp = wheel[num][7];
-		for (int i = 6; i >= 0; --i) {
-			wheel[num][i + 1] = wheel[num][i];
-		}
-		wheel[num][0] = tmp;
-	}
-	else {
-		tmp = wheel[num][0];
-		for (int i = 0; i <= 6; ++i) {
-			wheel[num][i] = wheel[num][i + 1];
-		}
-		wheel[num][7] = tmp;
-	}
+  if (idx > 0 && !rotated[idx - 1] && state[idx - 1][2] != state[idx][6]) {
+    rotate(idx - 1, dir * -1);
+  }
+  if (idx < 3 && !rotated[idx + 1] && state[idx + 1][6] != state[idx][2]) {
+    rotate(idx + 1, dir * -1);
+  }
+
+  memcpy(state[idx], tmp, sizeof(tmp));
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  for (int i = 0; i < 4; ++i) {
+    cin >> state[i];
+  }
+  cin >> K;
 }
 ```
 </details>
