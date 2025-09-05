@@ -819,6 +819,61 @@ d = {0(북), 1(동), 2(남), 3(서)}
 <summary>C++</summary>
 
 ```cpp
+#include <iostream>
+#include <algorithm>
+using namespace std;
+
+int N, A[11], op[4];
+void init();
+
+int minVal = 2e9, maxVal = -2e9;
+void calc(int val, int idx); // 지금까지 계산한 값이 val일때 A[idx ~ N - 1] 까지 계산 후 갱신
+
+int main() {
+  init();
+  calc(A[0], 1);
+  cout << maxVal << '\n' << minVal;
+  return 0;
+}
+
+void calc(int val, int idx) {
+  if (idx == N) {
+    minVal = min(minVal, val);
+    maxVal = max(maxVal, val);
+    return;
+  }
+  if (op[0] > 0) {
+    --op[0];
+    calc(val + A[idx], idx + 1);
+    ++op[0];
+  }
+  if (op[1] > 0) {
+    --op[1];
+    calc(val - A[idx], idx + 1);
+    ++op[1];
+  }
+  if (op[2] > 0) {
+    --op[2];
+    calc(val * A[idx], idx + 1);
+    ++op[2];
+  }
+  if (op[3] > 0) {
+    --op[3];
+    calc(val / A[idx], idx + 1);
+    ++op[3];
+  }
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+  cin >> N;
+  for (int i = 0; i < N; ++i) {
+    cin >> A[i];
+  }
+  cin >> op[0] >> op[1] >> op[2] >> op[3];
+}
+/*
 #include <cstdio>
 #include <algorithm>
 using namespace std;
@@ -879,12 +934,14 @@ void input() {
 		scanf("%d", &op_num[i]);
 	}
 }
+*/
 ```
 </details>
 
 ### 설명
 dfs로 연산자 선택하는 문제.
 
+재귀함수 어떻게 설계하느냐에 따라 코드 복잡도가 크게 달라진다.
 ***
 
 ## 14889. 스타트와 링크
