@@ -1308,6 +1308,80 @@ dfs 함수 내부에서 board에 연산을 하기 전에, board 값을 미리 �
 <summary>C++</summary>
 
 ```cpp
+#include <iostream>
+using namespace std;
+
+int N, M, H;
+bool line[31][11];
+void init();
+
+bool dfs(int y, int x, int num) { // (y, x) 부터 (H, N -1) 까지 가로선 num개 추가해서 정답 구해지는지 여부 반환
+  if (num == 0) {
+    for (int x = 1; x <= N; ++x) {
+      int pos = x;
+      for (int y = 1; y <= H; ++y) {
+        if (line[y][pos - 1]) {
+          --pos;
+        }
+        else if (line[y][pos]) {
+          ++pos;
+        }
+      }
+      if (pos != x) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  if (y == H + 1) {
+    return false;
+  }
+  if (x == N) {
+    return dfs(y + 1, 1, num);
+  }
+
+  if (line[y][x]) {
+    return dfs(y, x + 1, num);
+  }
+
+  // 선 연결 하기
+  if (!line[y][x - 1]) {
+    line[y][x] = true;
+    if (dfs(y, x + 1, num - 1)) {
+      return true;
+    }
+    line[y][x] = false;
+  }
+
+  // 선 연결 안하기
+  return dfs(y, x + 1, num);
+}
+
+int main() {
+  init();
+  for (int num = 0; num <= 3; ++num) {
+    if (dfs(1, 1, num)) {
+      cout << num;
+      return 0;
+    }
+  }
+  cout << -1;
+  return 0;
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> M >> H;
+  for (int i = 0; i < M; ++i) {
+    int a, b;
+    cin >> a >> b;
+    line[a][b] = true;
+  }
+}
+/*
 #include <cstdio>
 #include <cstring>
 
@@ -1382,6 +1456,7 @@ void input() {
     hori[a][b] = true;
   }
 }
+*/
 ```
 </details>
 
@@ -1395,6 +1470,8 @@ void input() {
    NxM board 위에서 dfs를 수행한다고 가정하자.
    
    dfs(y, x) 내부에서 board[y][x ~ M - 1] 탐색 이후, board[y + 1 ~ N - 1][0 ~ M - 1] 을 탐색하도록 구현할 수 있다.
+
+> **dfs 내부에서 선택 하거나 선택하지 않거나로 만들면 내부에 반복문을 만들지 않아도 된다 !!! 훨씬 간단해진다**
 
 ***
 
