@@ -952,61 +952,57 @@ dfs로 연산자 선택하는 문제.
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#define min(a, b) ((a) < (b) ? (a) : (b))
+#include <iostream>
+#include <vector>
+#include <cmath>
+using namespace std;
 
-int N;
-int score[20][20];
-void input();
+int N, S[20][20], row[20], col[20];
+void init();
 
-bool chosed[20];
 int ret = 987654321;
-void dfs(int idx, int num);
+// 선택된 start팀원이 startMask일 때, idx ~ N - 1 사람까지 cnt 명을 선택한 후 계산
+void calc(int idx, int cnt, int startMask);
 
 int main() {
-	input();
-	dfs(0, N / 2);
-	printf("%d", ret);
-	return 0;
+  init();
+  calc(0, N / 2, 0);
+  cout << ret;
+  return 0;
 }
 
-void calc() {
-	int A[10], B[10], a = 0, b = 0;
-	for (int i = 0; i < N; ++i) {
-		if (chosed[i]) A[a++] = i;
-		else B[b++] = i;
-	}
+void calc(int idx, int cnt, int startMask) {
+  if (cnt == 0) {
+    int gap = 0;
+    for (int i = 0; i < N; ++i) {
+      if (startMask & (1 << i)) {
+        gap += row[i];
+      }
+      else {
+        gap -= col[i];
+      }
+    }
+    ret = min(ret, abs(gap));
+    return;
+  }
 
-	int score_a = 0, score_b = 0;
-	for (int i = 0; i < N / 2; ++i) {
-		for (int j = 0; j < N / 2; ++j) {
-			score_a += score[A[i]][A[j]];
-			score_b += score[B[i]][B[j]];
-		}
-	}
-
-	ret = min(ret, (score_a > score_b ? score_a - score_b : score_b - score_a));
+  if (idx < N - cnt) {
+    calc(idx + 1, cnt, startMask);
+  }
+  calc(idx + 1, cnt - 1, startMask | (1 << idx));
 }
 
-void dfs(int idx, int num) {
-	if (num == 0) {
-		calc();
-		return;
-	}
-	for (int here = idx; here <= N - 1 - num; ++here) {
-		chosed[here] = true;
-		dfs(here + 1, num - 1);
-		chosed[here] = false;
-	}
-}
-
-void input() {
-	scanf("%d", &N);
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			scanf("%d", &score[i][j]);
-		}
-	}
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+  cin >> N;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      cin >> S[i][j];
+      row[i] += S[i][j];
+      col[j] += S[i][j];
+    }
+  }
 }
 ```
 </details>
@@ -1025,109 +1021,80 @@ void input() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+#include <cmath>
+using namespace std;
 
-int N, L, board[100][100];
-void input();
+int N, L, H[100][100];
+void init();
 
-bool calc_row(int y);
-bool calc_col(int x);
+bool check(int* tmp);
 
 int main() {
-	input();
-	int ret = 0;
-	for (int i = 0; i < N; ++i) {
-		if (calc_col(i)) {
-			++ret;
-		}
-		if (calc_row(i)) {
-			++ret;
-		}
-	}
-	printf("%d", ret);
-	return 0;
+  init();
+
+  int ret = 0, tmp[100];
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      tmp[j] = H[i][j];
+    }
+    if (check(tmp)) {
+      ++ret;
+    }
+  }
+
+  for (int j = 0; j < N; ++j) {
+    for (int i = 0; i < N; ++i) {
+      tmp[i] = H[i][j];
+    }
+    if (check(tmp)) {
+      ++ret;
+    }
+  }
+
+  cout << ret;
+
+  return 0;
 }
 
-bool calc_row(int y) {
-	int range = -1;
-	for (int x = 0; x < N - 1; ++x) {
-		int lx, rx;
-		if (board[y][x] == board[y][x + 1]) {
-			continue;
-		}
-		else if (board[y][x] + 1 == board[y][x + 1]) {
-			lx = x - L + 1;
-			rx = x;
-			if (lx <= range) return false;
-		}
-		else if (board[y][x] == board[y][x + 1] + 1) {
-			lx = x + 1;
-			rx = x + L;
-			if (rx >= N) return false;
-		}
-		else {
-			return false;
-		}
-		bool same_h = true;
-		for (int i = lx; i < rx; ++i) {
-			if (board[y][i] != board[y][i + 1]) {
-				same_h = false;
-				break;
-			}
-		}
-		if (same_h) {
-			range = rx;
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
-}
-bool calc_col(int x) {
-	int range = -1;
-	int ly, ry;
-	for (int y = 0; y < N - 1; ++y) {
-		if (board[y][x] == board[y + 1][x]) {
-			continue;
-		}
-		else if (board[y][x] + 1 == board[y + 1][x]) {
-			ly = y - L + 1;
-			ry = y;
-			if (ly <= range) return false;
-		}
-		else if (board[y][x] == board[y + 1][x] + 1) {
-			ly = y + 1;
-			ry = y + L;
-			if (ry >= N) return false;
-		}
-		else {
-			return false;
-		}
-		bool same_h = true;
-		for (int i = ly; i < ry; ++i) {
-			if (board[i][x] != board[i + 1][x]) {
-				same_h = false;
-				break;
-			}
-		}
-		if (same_h) {
-			range = ry;
-		}
-		else {
-			return false;
-		}
-	}
-	return true;
+bool check(int* tmp) {
+  bool put[100] = { false, };
+
+  for (int x = 0; x < N - 1; ++x) {
+    if (tmp[x] == tmp[x + 1]) continue;
+    else if (abs(tmp[x] - tmp[x + 1]) > 1) return false;
+    else if (tmp[x] == tmp[x + 1] + 1) {
+      for (int i = 0; i < L; ++i) {
+        if (!(x + 1 + i < N && tmp[x + 1 + i] == tmp[x + 1] && !put[x + 1 + i])) {
+          return false;
+        }
+        put[x + 1 + i] = true;
+      }
+      x += L - 1;
+    }
+    else {
+      for (int i = 0; i < L; ++i) {
+        if (!(x - i >= 0 && tmp[x - i] == tmp[x] && !put[x - i])) {
+          return false;
+        }
+        put[x - i] = true;
+      }
+    }
+  }
+
+  return true;
 }
 
-void input() {
-	scanf("%d %d", &N, &L);
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			scanf("%d", &board[i][j]);
-		}
-	}
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> L;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      cin >> H[i][j];
+    }
+  }
 }
 ```
 </details>
