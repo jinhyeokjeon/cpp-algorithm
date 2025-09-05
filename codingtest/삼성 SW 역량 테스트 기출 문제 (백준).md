@@ -445,100 +445,100 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
-#include <vector>
+#include <iostream>
 #include <algorithm>
+#include <vector>
 using namespace std;
 
-int N, M, board[500][500];
-bool basic[7][4][4] = {
-  {{1, 1, 1, 1}},
-  {{1, 1}, {1, 1}},
-  {{1}, {1}, {1, 1}},
-  {{0, 1}, {0, 1}, {1, 1}},
-  {{1}, {1, 1}, {0, 1}},
-  {{0, 1}, {1, 1}, {1}},
-  {{1, 1, 1}, {0, 1}}
+struct Pos {
+  int y, x;
+  bool operator<(const Pos& rhs) const {
+    if (y != rhs.y) return y < rhs.y;
+    return x < rhs.x;
+  }
+  bool operator==(const Pos& rhs) const {
+    return y == rhs.y && x == rhs.x;
+  }
 };
-vector<vector<pair<int, int>>> shapes;
-void input();
 
-int calc(int idx);
+int N, M, board[500][500];
+vector<vector<Pos>> shapes;
+void init();
+vector<Pos> rotate(vector<Pos> p, int num);
 
 int main() {
-  input();
-  int ret = 0;
-  for (int i = 0; i < shapes.size(); ++i) {
-    ret = max(ret, calc(i));
-  }
-  printf("%d", ret);
-  return 0;
-}
+  init();
 
-int calc(int idx) {
-  auto& shape = shapes[idx];
   int ret = 0;
 
   for (int y = 0; y < N; ++y) {
     for (int x = 0; x < M; ++x) {
-      int sum = 0;
-      for (auto& p : shape) {
-        int yy = y + p.first, xx = x + p.second;
-        if (yy < 0 || yy >= N || xx < 0 || xx >= M) {
-          sum = 0;
-          break;
-        }
-        sum += board[yy][xx];
-      }
-      ret = max(ret, sum);
-    }
-  }
-
-  return ret;
-}
-
-void rotate(int idx) {
-  bool tmp[4][4];
-  for (int y = 0; y < 4; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      tmp[x][3 - y] = basic[idx][y][x];
-    }
-  }
-  memcpy(basic[idx], tmp, sizeof(tmp));
-}
-
-void add_shape(int idx, int rot) { // basic[idx] 도형을 회전시키며 rot번 추가
-  for (int r = 0; r < rot; ++r) {
-    shapes.emplace_back();
-    int yy = -1, xx = -1;
-    for (int y = 0; y < 4; ++y) {
-      for (int x = 0; x < 4; ++x) {
-        if (basic[idx][y][x]) {
-          if (yy == -1) {
-            yy = y; xx = x;
+      for (vector<Pos>& shape : shapes) {
+        int tmp = 0;
+        for (Pos& pos : shape) {
+          int yy = y + pos.y, xx = x + pos.x;
+          if (yy < 0 || yy >= N || xx < 0 || xx >= M) {
+            tmp = -1;
+            break;
           }
-          shapes.back().push_back({ y - yy, x - xx });
+          tmp += board[yy][xx];
         }
+        ret = max(ret, tmp);
       }
     }
-    rotate(idx);
   }
+
+  cout << ret;
+
+  return 0;
 }
 
-void input() {
-  scanf("%d %d", &N, &M);
+vector<Pos> rotate(vector<Pos> p, int num) {
+  while (num--) {
+    vector<Pos> tmp;
+    for (Pos& pos : p) {
+      tmp.push_back({ pos.x, 3 - pos.y });
+    }
+    p = tmp;
+  }
+  return p;
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+  cin >> N >> M;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < M; ++j) {
-      scanf("%d", &board[i][j]);
+      cin >> board[i][j];
     }
   }
 
-  add_shape(0, 2);
-  add_shape(1, 1);
-  for (int i = 2; i < 7; ++i) {
-    add_shape(i, 4);
+  // 기본 도형 + 대칭
+  shapes.push_back({ { 0, 0 }, { 0, 1 }, { 0, 2 }, { 0, 3 } });
+  shapes.push_back({ {0, 0}, {0, 1}, {1, 0}, {1, 1} });
+  shapes.push_back({ { 0, 0 }, { 1, 0 }, { 2, 0 }, { 2, 1 } });
+  shapes.push_back({ {0, 0}, {1, 0}, {2, 0}, {2, -1} });
+  shapes.push_back({ {0, 0}, {1, 0}, {1, 1}, {2, 1} });
+  shapes.push_back({ {0, 0}, {1, -1}, {1, 0}, {2, -1} });
+  shapes.push_back({ {0, 0}, {0, 1}, {0, 2}, {1, 1} });
+
+  // 회전 시키면서 삽입 && 왼쪽 위가 (0, 0) 되게 보정
+  for (int i = 0; i < 7; ++i) {
+    for (int num = 1; num <= 3; ++num) {
+      shapes.push_back(rotate(shapes[i], num));
+      vector<Pos>& shape = shapes.back();
+      sort(shape.begin(), shape.end());
+      for (int i = 1; i < shape.size(); ++i) {
+        shape[i].y -= shape[0].y;
+        shape[i].x -= shape[0].x;
+      }
+      shape[0] = { 0, 0 };
+    }
   }
+
+  sort(shapes.begin(), shapes.end());
+  shapes.erase(unique(shapes.begin(), shapes.end()), shapes.end());
 }
 ```
 </details>
