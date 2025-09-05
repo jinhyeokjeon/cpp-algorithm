@@ -556,6 +556,47 @@ vector<T> 대상으로 emplace_back() 연산을 하면, T() 가 vector의 맨 �
 <summary>C++</summary>
 
 ```cpp
+#include <iostream>
+#include <cstring>
+using namespace std;
+
+int N, T[16], P[16], cache[16];
+void init();
+
+int maxProfit(int day) { // day일 ~ N일 까지의 최대 수익
+  if (day == N + 1) {
+    return 0;
+  }
+
+  int& ret = cache[day];
+  if (ret != -1) return ret;
+
+  ret = maxProfit(day + 1);
+  if (T[day] <= N - day + 1) {
+    ret = max(ret, maxProfit(day + T[day]) + P[day]);
+  }
+  return ret;
+}
+
+int main() {
+  init();
+  cout << maxProfit(1);
+  return 0;
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N;
+  for (int i = 1; i <= N; ++i) {
+    cin >> T[i] >> P[i];
+  }
+
+  memset(cache, -1, sizeof(cache));
+}
+
+/*
 #include <cstdio>
 #define max(a, b) ((a) > (b) ? (a) : (b))
 
@@ -589,12 +630,14 @@ void input() {
     scanf("%d %d", &T[i], &P[i]);
   }
 }
+*/
 ```
 </details>
 
 ### 설명
 N값이 최대 15이므로, 모든 경우를 다 세어도 2^15(약 32000) 밖에 되지 않는다.
 
+재귀함수 정의를 어떻게 잡느냐에 따라 코드 복잡도가 크게 달라진다.
 ***
 
 ## 14502. 연구소
