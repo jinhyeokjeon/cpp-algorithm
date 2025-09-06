@@ -1483,56 +1483,57 @@ void input() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
-const int dy[4] = { 0, -1, 0, 1 }, dx[4] = { 1, 0, -1, 0 };
-int N, ret;
-bool exist[101][101];
-vector<int> dragon;
+const int dy[4] = { 0, -1, 0, 1 }, dx[4] = { 1, 0, -1, 0 }; // 오, 위, 왼, 아
 
-void make_dragon(int y, int x, int g);
-void count_square();
+int N, y, x, d, g;
+bool dragon[101][101];
+
+void draw(int y, int x, int d, int g);
 
 int main() {
-	scanf("%d", &N);
-	while (N--) {
-		int x, y, d, g;
-		scanf("%d %d %d %d", &x, &y, &d, &g);
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
 
-		dragon.clear();
-		
-		dragon.push_back(d);
-		exist[y][x] = exist[y + dy[d]][x + dx[d]] = true;
-		make_dragon(y + dy[d], x + dx[d], g);
-	}
-	count_square();
-	printf("%d", ret);
-	return 0;
+  cin >> N;
+  for (int i = 0; i < N; ++i) {
+    cin >> x >> y >> d >> g;
+    draw(y, x, d, g);
+  }
+
+  int ret = 0;
+  for (int y = 0; y < 100; ++y) {
+    for (int x = 0; x < 100; ++x) {
+      if (dragon[y][x] && dragon[y][x + 1] && dragon[y + 1][x] && dragon[y + 1][x + 1]) {
+        ++ret;
+      }
+    }
+  }
+
+  cout << ret;
+
+  return 0;
 }
 
-void count_square() {
-	for (int y = 0; y <= 99; ++y) {
-		for (int x = 0; x <= 99; ++x) {
-			if (exist[y][x] && exist[y][x + 1] && exist[y + 1][x] && exist[y + 1][x + 1]) {
-				++ret;
-			}
-		}
-	}
-}
-
-void make_dragon(int y, int x, int g) {
-	if (g == 0) return;
-	for (int i = dragon.size() - 1; i >= 0; --i) {
-		int d = (dragon[i] + 2) % 4;
-		d = (d + 3) % 4;
-		y += dy[d]; x += dx[d];
-		exist[y][x] = true;
-		dragon.push_back(d);
-	}
-	make_dragon(y, x, g - 1);
+void draw(int y, int x, int d, int g) {
+  vector<int> dirs(1, d);
+  while (g--) {
+    vector<int> tmp = dirs;
+    reverse(tmp.begin(), tmp.end());
+    for_each(tmp.begin(), tmp.end(), [](int& d) {
+      d = (d + 1) % 4;
+      });
+    dirs.insert(dirs.end(), tmp.begin(), tmp.end());
+  }
+  dragon[y][x] = true;
+  for (int dir : dirs) {
+    y += dy[dir]; x += dx[dir];
+    dragon[y][x] = true;
+  }
 }
 ```
 </details>
