@@ -1647,226 +1647,153 @@ void input() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+#include <string>
 #include <cstring>
+using namespace std;
 
-enum Face { U, D, F, R, B, L };
-struct Pos {
-	int f, y, x;
+enum Face {
+	U, D, F, R, B, L
 };
 
-char dice[6][3][3], tmp[6][3][3];
-Pos to[6][2][6][3][3]; // to[f2][d][f][y][x] : f면 y, x 를 f2면 d방향 회전시 이동 좌표
+int T, n;
 
-void init();
-void reset_dice();
-
-void rotate(char f, char d);
-
-int main() {
-	init();
-	int T, n;
-	char f, d;
-	scanf("%d", &T);
-	while (T--) {
-		scanf("%d", &n);
-		getchar();
-		reset_dice();
-		while (n--) {
-			scanf("%c%c", &f, &d);
-			getchar();
-			rotate(f, d);
-		}
-		for (int y = 0; y < 3; ++y) {
-			for (int x = 0; x < 3; ++x) {
-				printf("%c", dice[U][y][x]);
-			}
-			printf("\n");
-		}
-	}
-	return 0;
-}
-
-void rotate(char f, char d) {
-	int face;
-	if (f == 'U') face = 0;
-	else if (f == 'D') face = 1;
-	else if (f == 'F') face = 2;
-	else if (f == 'R') face = 3;
-	else if (f == 'B') face = 4;
-	else if (f == 'L') face = 5;
-
-	int dir = (d == '+' ? 0 : 1);
-
-	for (int f = 0; f < 6; ++f) {
-		for (int y = 0; y < 3; ++y) {
-			for (int x = 0; x < 3; ++x) {
-				Pos& p = to[face][dir][f][y][x];
-				tmp[p.f][p.y][p.x] = dice[f][y][x];
-			}
-		}
-	}
-
-	memcpy(dice, tmp, sizeof(dice));
-}
-
-void reset_dice() {
-	for (int f = 0; f < 6; ++f) {
-		memset(dice[f], "wyrbog"[f], 9);
-	}
-}
-
-void init() {
-	// 0. 먼저 모두 자기 자신으로 가도록
-	for (int f = 0; f < 6; ++f) {
-		for (int dir = 0; dir < 2; ++dir) {
-			for (int ff = 0; ff < 6; ++ff) {
-				for (int y = 0; y < 3; ++y) {
-					for (int x = 0; x < 3; ++x) {
-						to[f][dir][ff][y][x] = { ff, y, x };
-					}
+struct Cube {
+	char color[6][3][3];
+	Cube() {
+		for (int i = 0; i < 6; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				for (int k = 0; k < 3; ++k) {
+					color[i][j][k] = "wyrbog"[i];
 				}
 			}
 		}
 	}
-	// 1. U면
-	for (int i = 0; i < 3; ++i) {
-		to[U][0][F][0][i] = { L, 0, i };
-		to[U][1][F][0][i] = { R, 0, i };
+	void rotate(char (*f)[3], bool cw) {
+		char tmp[3][3];
+		for (int y = 0; y < 3; ++y) {
+			for (int x = 0; x < 3; ++x) {
+				if (cw) tmp[x][2 - y] = f[y][x];
+				else tmp[2 - x][y] = f[y][x];
+			}
+		}
+		memcpy(f, tmp, sizeof(tmp));
 	}
-	for (int i = 0; i < 3; ++i) {
-		to[U][0][L][0][i] = { B, 0, i };
-		to[U][1][L][0][i] = { F, 0, i };
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[U][0][B][0][i] = { R, 0, i };
-		to[U][1][B][0][i] = { L, 0, i };
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[U][0][R][0][i] = { F, 0, i };
-		to[U][1][R][0][i] = { B, 0, i };
-	}
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			to[U][0][U][y][x] = { U, x, 2 - y };
-			to[U][1][U][y][x] = { U, 2 - x, y };
+	void rotate(char* f0, char* f1, char* f2, char* f3, char* f4, char* f5, char* f6, char* f7, char* f8, char* f9,
+		char* f10, char* f11, bool cw) {
+		if (cw) {
+			char tmp[3] = { *f0, *f1, *f2 };
+			*f0 = *f9; *f1 = *f10; *f2 = *f11;
+			*f9 = *f6; *f10 = *f7; *f11 = *f8;
+			*f6 = *f3; *f7 = *f4; *f8 = *f5;
+			*f3 = tmp[0]; *f4 = tmp[1]; *f5 = tmp[2];
+		}
+		else {
+			char tmp[3] = { *f0, *f1, *f2 };
+			*f0 = *f3; *f1 = *f4; *f2 = *f5;
+			*f3 = *f6; *f4 = *f7; *f5 = *f8;
+			*f6 = *f9; *f7 = *f10; *f8 = *f11;
+			*f9 = tmp[0]; *f10 = tmp[1]; *f11 = tmp[2];
 		}
 	}
-	// 2. D면 (위에서 볼 땐 반대로 회전)
-	for (int i = 0; i < 3; ++i) {
-		to[D][1][F][2][i] = { L, 2, i };
-		to[D][0][F][2][i] = { R, 2, i };
+	void rotate(Face face, bool cw) {
+		char tmp[6][3][3];
+		memcpy(tmp, color, sizeof(color));
+
+		switch (face) {
+		case U:
+			rotate(tmp[U], cw);
+			rotate(&tmp[F][0][2], &tmp[F][0][1], &tmp[F][0][0],
+				&tmp[L][0][2], &tmp[L][0][1], &tmp[L][0][0],
+				&tmp[B][0][2], &tmp[B][0][1], &tmp[B][0][0],
+				&tmp[R][0][2], &tmp[R][0][1], &tmp[R][0][0],
+				cw);
+			break;
+		case D:
+			rotate(tmp[D], !cw);
+			rotate(&tmp[F][2][2], &tmp[F][2][1], &tmp[F][2][0],
+				&tmp[L][2][2], &tmp[L][2][1], &tmp[L][2][0],
+				&tmp[B][2][2], &tmp[B][2][1], &tmp[B][2][0],
+				&tmp[R][2][2], &tmp[R][2][1], &tmp[R][2][0],
+				!cw);
+			break;
+		case F:
+			rotate(tmp[F], cw);
+			rotate(&tmp[U][2][0], &tmp[U][2][1], &tmp[U][2][2],
+				&tmp[R][0][0], &tmp[R][1][0], &tmp[R][2][0],
+				&tmp[D][2][2], &tmp[D][2][1], &tmp[D][2][0],
+				&tmp[L][2][2], &tmp[L][1][2], &tmp[L][0][2],
+				cw);
+			break;
+		case B:
+			rotate(tmp[B], cw);
+			rotate(&tmp[U][0][0], &tmp[U][0][1], &tmp[U][0][2],
+				&tmp[R][0][2], &tmp[R][1][2], &tmp[R][2][2],
+				&tmp[D][0][2], &tmp[D][0][1], &tmp[D][0][0],
+				&tmp[L][2][0], &tmp[L][1][0], &tmp[L][0][0],
+				!cw);
+			break;
+		case R:
+			rotate(tmp[R], cw);
+			rotate(&tmp[U][2][2], &tmp[U][1][2], &tmp[U][0][2],
+				&tmp[B][0][0], &tmp[B][1][0], &tmp[B][2][0],
+				&tmp[D][0][2], &tmp[D][1][2], &tmp[D][2][2],
+				&tmp[F][2][2], &tmp[F][1][2], &tmp[F][0][2],
+				cw);
+			break;
+		case L:
+			rotate(tmp[L], cw);
+			rotate(&tmp[U][2][0], &tmp[U][1][0], &tmp[U][0][0],
+				&tmp[B][0][2], &tmp[B][1][2], &tmp[B][2][2],
+				&tmp[D][0][0], &tmp[D][1][0], &tmp[D][2][0],
+				&tmp[F][2][0], &tmp[F][1][0], &tmp[F][0][0],
+				!cw);
+			break;
+		}
+		memcpy(color, tmp, sizeof(color));
 	}
-	for (int i = 0; i < 3; ++i) {
-		to[D][1][L][2][i] = { B, 2, i };
-		to[D][0][L][2][i] = { F, 2, i };
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[D][1][B][2][i] = { R, 2, i };
-		to[D][0][B][2][i] = { L, 2, i };
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[D][1][R][2][i] = { F, 2, i };
-		to[D][0][R][2][i] = { B, 2, i };
-	}
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			to[D][1][D][y][x] = { D, x, 2 - y };
-			to[D][0][D][y][x] = { D, 2 - x, y };
+};
+
+int main() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
+
+	cin >> T;
+	while (T--) {
+		Cube cube;
+		cin >> n;
+		while (n--) {
+			string s; cin >> s;
+			switch (s[0]) {
+			case 'U':
+				cube.rotate(U, (s[1] == '+'));
+				break;
+			case 'D':
+				cube.rotate(D, (s[1] == '+'));
+				break;
+			case 'F':
+				cube.rotate(F, (s[1] == '+'));
+				break;
+			case 'R':
+				cube.rotate(R, (s[1] == '+'));
+				break;
+			case 'B':
+				cube.rotate(B, (s[1] == '+'));
+				break;
+			case 'L':
+				cube.rotate(L, (s[1] == '+'));
+				break;
+			}
+		}
+		for (int i = 0; i < 3; ++i) {
+			for (int j = 0; j < 3; ++j) {
+				cout << cube.color[U][i][j];
+			}
+			cout << '\n';
 		}
 	}
-	// 3. F면
-	for (int i = 0; i < 3; ++i) {
-		to[F][0][U][2][i] = {R, i, 0};
-		to[F][1][U][2][i] = {L, 2 - i, 2};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[F][0][R][i][0] = {D, 2, 2 - i};
-		to[F][1][R][i][0] = {U, 2, i};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[F][0][D][2][i] = {L, i, 2};
-		to[F][1][D][2][i] = {R, 2 - i, 0};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[F][0][L][i][2] = {U, 2, 2 - i};
-		to[F][1][L][i][2] = {D, 2, i};
-	}
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			to[F][0][F][y][x] = { F, x, 2 - y };
-			to[F][1][F][y][x] = { F, 2 - x, y };
-		}
-	}
-	// 4. R면
-	for (int i = 0; i < 3; ++i) {
-		to[R][0][U][i][2] = {B, 2 - i, 0};
-		to[R][1][U][i][2] = {F, i, 2};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[R][0][B][i][0] = {D, i, 2};
-		to[R][1][B][i][0] = {U, 2 - i, 2};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[R][0][D][i][2] = {F, 2 - i, 2};
-		to[R][1][D][i][2] = {B, i, 0};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[R][0][F][i][2] = {U, i, 2};
-		to[R][1][F][i][2] = {D, 2 - i, 2};
-	}
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			to[R][0][R][y][x] = { R, x, 2 - y };
-			to[R][1][R][y][x] = { R, 2 - x, y };
-		}
-	}
-	// 4. B면
-	for (int i = 0; i < 3; ++i) {
-		to[B][0][U][0][i] = {L, 2 - i, 0};
-		to[B][1][U][0][i] = {R, i, 2};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[B][0][L][i][0] = {D, 0, i};
-		to[B][1][L][i][0] = {U, 0, 2 - i};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[B][0][D][0][i] = {R, 2 - i, 2};
-		to[B][1][D][0][i] = {L, i, 0};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[B][0][R][i][2] = {U, 0, i};
-		to[B][1][R][i][2] = {D, 0 , 2 - i};
-	}
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			to[B][0][B][y][x] = { B, x, 2 - y };
-			to[B][1][B][y][x] = { B, 2 - x, y };
-		}
-	}
-	// 3. L면
-	for (int i = 0; i < 3; ++i) {
-		to[L][0][U][i][0] = {F, i, 0};
-		to[L][1][U][i][0] = {B, 2 - i, 2};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[L][0][F][i][0] = {D, 2 - i, 0};
-		to[L][1][F][i][0] = {U, i, 0};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[L][0][D][i][0] = {B, i, 2};
-		to[L][1][D][i][0] = {F, 2 - i, 0};
-	}
-	for (int i = 0; i < 3; ++i) {
-		to[L][0][B][i][2] = {U, 2 - i, 0};
-		to[L][1][B][i][2] = {D, i, 0};
-	}
-	for (int y = 0; y < 3; ++y) {
-		for (int x = 0; x < 3; ++x) {
-			to[L][0][L][y][x] = { L, x, 2 - y };
-			to[L][1][L][y][x] = { L, 2 - x, y };
-		}
-	}
+	
+	return 0;
 }
 ```
 </details>
