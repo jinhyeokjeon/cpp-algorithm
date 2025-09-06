@@ -2014,130 +2014,107 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <list>
+#include <iostream>
+#include <deque>
+#include <algorithm>
 using namespace std;
 
-struct Tree {
-  int age, cnt;
-};
-int N, M, K, A[10][10], food[10][10];
-list<Tree> trees[10][10];
-void input();
+int N, M, K, A[10][10];
+void init();
 
-void calc1(int y, int x);
-void calc2(int y, int x);
+int food[10][10];
+deque<int> trees[10][10];
 
 int main() {
-  input();
-  for (int year = 0; year < K; ++year) {
-    // spring && summer
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        calc1(y, x);
-      }
-    }
-    // fall
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        calc2(y, x);
-      }
-    }
-    // winter
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        food[y][x] += A[y][x];
-      }
-    }
-  }
+	init();
 
-  int sum = 0;
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      for (Tree& t : trees[y][x]) {
-        sum += t.cnt;
-      }
-    }
-  }
-  printf("%d", sum);
+	for (int year = 0; year < K; ++year) {
+		// 1. 봄 && 여름
+		for (int y = 0; y < N; ++y) {
+			for (int x = 0; x < N; ++x) {
+				for (int i = 0; i < trees[y][x].size(); ++i) {
+					int& age = trees[y][x][i];
+					if (food[y][x] >= age) {
+						food[y][x] -= age;
+						++age;
+					}
+					else {
+						for (int j = i; j < trees[y][x].size(); ++j) {
+							food[y][x] += trees[y][x][j] / 2;
+						}
+						trees[y][x].erase(trees[y][x].begin() + i, trees[y][x].end());
+					}
+				}
+			}
+		}
 
-  return 0;
+		// 2. 가을
+		for (int y = 0; y < N; ++y) {
+			for (int x = 0; x < N; ++x) {
+				for (int age : trees[y][x]) {
+					if (age % 5 == 0) {
+						for (int i = -1; i <= 1; ++i) {
+							for (int j = -1; j <= 1; ++j) {
+								if (i == 0 && j == 0) continue;
+								int yy = y + i, xx = x + j;
+								if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+								trees[yy][xx].push_front(1);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 3. 겨울
+		for (int y = 0; y < N; ++y) {
+			for (int x = 0; x < N; ++x) {
+				food[y][x] += A[y][x];
+			}
+		}
+	}
+
+	int ret = 0;
+	for (int y = 0; y < N; ++y) {
+		for (int x = 0; x < N; ++x) {
+			ret += trees[y][x].size();
+		}
+	}
+	cout << ret;
+
+	return 0;
 }
 
-void calc2(int y, int x) {
-  list<Tree>& t = trees[y][x];
-  for (Tree& tree : t) {
-    if (tree.age % 5 != 0) continue;
-    for (int dy = -1; dy <= 1; ++dy) {
-      for (int dx = -1; dx <= 1; ++dx) {
-        if (dy == 0 && dx == 0) continue;
-        int yy = y + dy, xx = x + dx;
-        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-        if (!trees[yy][xx].empty() && trees[yy][xx].front().age == 1) {
-          trees[yy][xx].front().cnt += tree.cnt;
-        }
-        else {
-          trees[yy][xx].push_front({ 1, tree.cnt });
-        }
-      }
-    }
-  }
-}
+void init() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
 
-void calc1(int y, int x) {
-  list<Tree>& t = trees[y][x];
-  for (auto it = t.begin(); it != t.end(); ++it) {
-    if (it->age * it->cnt <= food[y][x]) {
-      food[y][x] -= it->age * it->cnt;
-      ++it->age;
-    }
-    else {
-      int eat_num = food[y][x] / it->age;
-      int dead_num = it->cnt - eat_num;
-      // 양분 먹기 && 죽은 나무 양분되기
-      if (eat_num) {
-        food[y][x] -= it->age * eat_num;
-        food[y][x] += (it->age / 2) * dead_num;
-        ++(it->age);
-        it->cnt = eat_num;
-        ++it;
-      }
-      while (it != t.end()) {
-        food[y][x] += (it->age / 2) * it->cnt;
-        it = t.erase(it);
-      }
-      break;
-    }
-  }
-}
+	cin >> N >> M >> K;
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			cin >> A[i][j];
+		}
+	}
 
-void input() {
-  scanf("%d %d %d", &N, &M, &K);
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      scanf("%d", &A[i][j]);
-    }
-  }
-  while (M--) {
-    int y, x, age;
-    scanf("%d %d %d", &y, &x, &age);
-    trees[y - 1][x - 1].push_front({ age, 1 });
-  }
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      food[i][j] = 5;
-    }
-  }
+	for (int i = 0; i < M; ++i) {
+		int y, x, z;
+		cin >> y >> x >> z;
+		--y; --x;
+		trees[y][x].push_back(z);
+	}
+
+	for (int i = 0; i < N; ++i) {
+		for (int j = 0; j < N; ++j) {
+			sort(trees[i][j].begin(), trees[i][j].end());
+			food[i][j] = 5;
+		}
+	}
 }
 ```
 </details>
 
 ### 설명
-1. 리스트 활용 문제.
-2. 자료구조 설계 문제.
-   같은 위치에서 같은 나이의 나무들이 다수 생성될 가능성이 있으므로, {나무의 나이, 나무의 개수} 라는 자료구조를 만들면 시간 및 공간복잡도를 줄일 수 있다.
-3. main 을 너무 단순하게 하려 하다보면 함수 크기가 너무 커져 헷갈려진다. 
-   main 과 서브 루틴 함수의 사이즈를 적당히 조절하자.
+데크 활용 문제.
 
 ***
 
