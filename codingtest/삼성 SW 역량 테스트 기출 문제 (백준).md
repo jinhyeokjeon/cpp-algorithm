@@ -1813,100 +1813,196 @@ enum Face { U, D, F, R, B, L }; 을 사용하면 덜 헷갈리게 코드 작성 
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+// DFS
+#include <iostream>
 #include <queue>
 #include <vector>
+#include <cmath>
+#include <cstring>
 using namespace std;
 
 struct Pos {
-	int y, x;
+  int y, x;
 };
 
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
-int N, L, R, board[50][50];
-void input();
 
-bool discovered[50][50];
-bool move();
+int N, L, R, A[50][50];
+void init();
+
+vector<vector<bool>> visited;
+vector<Pos> nations;
+queue<Pos> changed;
+int dfs(Pos here);
+bool p_move();
 
 int main() {
-	input();
-
-	for(int day = 0; ; ++day) {
-		if (!move()) {
-			printf("%d", day);
-			break;
-		}
-	}
-
-	return 0;
+  init();
+  int day;
+  for (day = 0; ; ++day) {
+    if (!p_move()) {
+      break;
+    }
+  }
+  cout << day;
+  return 0;
 }
 
-bool can_move(Pos a, Pos b) {
-	int gap = board[a.y][a.x] - board[b.y][b.x];
-	if (gap < 0) gap *= -1;
-	return L <= gap && gap <= R;
+int dfs(Pos here) {
+  visited[here.y][here.x] = true;
+  nations.push_back(here);
+  int num = A[here.y][here.x];
+
+  for (int d = 0; d < 4; ++d) {
+    Pos there = { here.y + dy[d], here.x + dx[d] };
+    if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N || visited[there.y][there.x]) {
+      continue;
+    }
+    if (abs(A[there.y][there.x] - A[here.y][here.x]) < L || abs(A[there.y][there.x] - A[here.y][here.x]) > R) {
+      continue;
+    }
+    num += dfs(there);
+  }
+
+  return num;
 }
 
-int bfs(int y, int x, vector<Pos>& v) {
-	queue<Pos> q;
-	q.push({ y, x });
-	discovered[y][x] = true;
+bool p_move() {
+  bool opened = false;
+  visited = vector<vector<bool>>(N, vector<bool>(N, false));
 
-	int sum = 0;
+  int _size = changed.size();
+  for (int i = 0; i < _size; ++i) {
+    Pos p = changed.front(); changed.pop();
+    if (!visited[p.y][p.x]) {
+      nations.clear();
+      int total = dfs({ p.y, p.x });
+      if (nations.size() > 1) {
+        opened = true;
+        int avg = total / nations.size();
+        for (Pos& nation : nations) {
+          A[nation.y][nation.x] = avg;
+          changed.push(nation);
+        }
+      }
+    }
+  }
 
-	while (!q.empty()) {
-		Pos here = q.front(); q.pop();
-		sum += board[here.y][here.x];
-		v.push_back(here);
-		for (int d = 0; d < 4; ++d) {
-			int yy = here.y + dy[d], xx = here.x + dx[d];
-			if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-			if(discovered[yy][xx] || !can_move(here, {yy, xx})) continue;
-			q.push({ yy, xx });
-			discovered[yy][xx] = true;
-		}
-	}
-
-	return sum;
+  return opened;
 }
 
-bool move() {
-	memset(discovered, false, sizeof(discovered));
-	bool check = false;
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
 
-	for (int y = 0; y < N; ++y) {
-		for (int x = 0; x < N; ++x) {
-			if (discovered[y][x]) continue;
-			vector<Pos> v;
-			int sum = bfs(y, x, v);
-			if (v.size() > 1) {
-				check = true;
-				sum /= v.size();
-				for (Pos& p : v) {
-					board[p.y][p.x] = sum;
-				}
-			}
-		}
-	}
-
-	return check;
+  cin >> N >> L >> R;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      cin >> A[i][j];
+      changed.push({ i, j });
+    }
+  }
 }
 
-void input() {
-	scanf("%d %d %d", &N, &L, &R);
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			scanf("%d", &board[i][j]);
-		}
-	}
+// BFS
+#include <iostream>
+#include <queue>
+#include <vector>
+#include <cmath>
+#include <cstring>
+using namespace std;
+
+struct Pos {
+  int y, x;
+};
+
+const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
+int N, L, R, A[50][50];
+void init();
+
+queue<Pos> changed;
+vector<vector<bool>> discovered;
+bool bfs();
+void bfs(Pos here);
+
+int main() {
+  init();
+  int day;
+  for (day = 0; ; ++day) {
+    if (!bfs()) {
+      break;
+    }
+  }
+  cout << day;
+  return 0;
+}
+
+bool bfs() {
+  int num = changed.size();
+  discovered = vector<vector<bool>>(N, vector<bool>(N, false));
+  for (int i = 0; i < num; ++i) {
+    Pos p = changed.front(); changed.pop();
+    if (!discovered[p.y][p.x]) {
+      bfs(p);
+    }
+  }
+  return !changed.empty();
+}
+
+void bfs(Pos start) {
+  queue<Pos> q;
+  vector<Pos> moved;
+  int sum = 0;
+
+  q.push(start);
+  discovered[start.y][start.x] = true;
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    moved.push_back(here);
+    sum += A[here.y][here.x];
+    for (int d = 0; d < 4; ++d) {
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N || discovered[there.y][there.x]) continue;
+      if (abs(A[there.y][there.x] - A[here.y][here.x]) < L || abs(A[there.y][there.x] - A[here.y][here.x]) > R) continue;
+      discovered[there.y][there.x] = true;
+      q.push(there);
+    }
+  }
+
+  int avg = sum / moved.size();
+  if (moved.size() > 1) {
+    for (Pos& p : moved) {
+      A[p.y][p.x] = avg;
+      changed.push(p);
+    }
+  }
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> L >> R;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      cin >> A[i][j];
+      changed.push({ i, j });
+    }
+  }
 }
 ```
 </details>
 
 ### 설명
-bfs 문제.
+1. dfs 또는 bfs를 이용하여 문제를 해결할 수 있다.
+
+2. queue를 이용하면 이전 반복에서 변화가 있었던 좌표 대상으로만 수행할 수 있다.
+
+   (변화 x - 변화 x) 국경선은 열릴 수 없다. 즉 이전 반복에서 변화가 있었던 나라들을 대상으로만 탐색을 진행하면 된다.
+
+   둘 다 변화 없었다면, 둘 사이의 국경선도 전날 열리지 않았다는 것이고, 그럼 둘 사이의 범위는 [L, R] 이 아니라는 것이고, 그럼 오늘도 국경은 안열린다.
 
 ***
 
