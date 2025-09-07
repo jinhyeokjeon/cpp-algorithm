@@ -2388,139 +2388,139 @@ board의 기본값이 tmp에 정확히 저장되는지 확인해야 한다.
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
 #include <vector>
+#include <cstring>
 using namespace std;
 
-struct Info {
-	int y, x, d, spd, size;
-	bool eaten;
-};
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, 1, -1 };
-int R, C, M, shark_idx[100][100];
-vector<Info> sharks;
 
-void input();
+struct Shark {
+  int y, x, speed, dir, size;
+  bool out;
+};
 
-int catch_shark(int x);
+int R, C, M, sharkIdx[100][100];
+vector<Shark> sharks;
+void init();
 
-void move_shark(Info& s, int dist);
-
-void eat_shark();
+int fishing(int c);
+void moving(Shark& shark, int dist);
+void update(int i);
 
 int main() {
-	input();
-	int sum = 0;
-	for (int x = 0; x < C; ++x) {
-		// 1. 상어 잡기
-		sum += catch_shark(x);
-		// 2. 상어 이동
-		for (int i = 0; i < sharks.size(); ++i) {
-			move_shark(sharks[i], sharks[i].spd);
-		}
-		// 3. 상어끼리 잡아먹기
-		eat_shark();
-	}
-	printf("%d", sum);
-	return 0;
+  init();
+
+  int ret = 0;
+  for (int c = 0; c < C; ++c) {
+    // 1. 낚시
+    ret += fishing(c);
+    // 2. 상어 이동
+    for (Shark& shark : sharks) {
+      if (shark.out) continue;
+      moving(shark, shark.speed);
+    }
+    // 3. sharkIdx 갱신
+    memset(sharkIdx, -1, sizeof(sharkIdx));
+    for (int i = 0; i < sharks.size(); ++i) {
+      if (sharks[i].out) continue;
+      update(i);
+    }
+  }
+
+  cout << ret;
+
+  return 0;
 }
 
-void eat_shark() {
-	memset(shark_idx, -1, sizeof(shark_idx));
-	for (int i = 0; i < sharks.size(); ++i) {
-		Info& s = sharks[i];
-		if (s.eaten) continue;
-		if (shark_idx[s.y][s.x] == -1) {
-			shark_idx[s.y][s.x] = i;
-		}
-		else {
-			Info& s0 = sharks[shark_idx[s.y][s.x]];
-			if (s0.size < s.size) {
-				s0.eaten = true;
-				shark_idx[s.y][s.x] = i;
-			}
-			else {
-				s.eaten = true;
-			}
-		}
-	}
+void update(int i) {
+  Shark& shark = sharks[i]; // 새롭게 고려하는 상어
+  int& idx = sharkIdx[shark.y][shark.x]; // 기존에 있던 상어 인덱스
+  if (idx == -1) {
+    idx = i;
+  }
+  else if (sharks[idx].size > shark.size) {
+    shark.out = true;
+  }
+  else {
+    sharks[idx].out = true;
+    idx = i;
+  }
 }
 
-void move_shark(Info& s, int dist) {
-	if (s.d <= 1) {
-		int yy = s.y + dy[s.d] * dist;
-		if (0 <= yy && yy < R) {
-			s.y = yy;
-			return;
-		}
-		else if (yy < 0){
-			int moved = s.y;
-			s.y = 0;
-			s.d = 1;
-			move_shark(s, dist - moved);
-		}
-		else {
-			int moved = R - 1 - s.y;
-			s.y = R - 1;
-			s.d = 0;
-			move_shark(s, dist - moved);
-		}
-	}
-	else {
-		int xx = s.x + dx[s.d] * dist;
-		if (0 <= xx && xx < C) {
-			s.x = xx;
-			return;
-		}
-		else if (xx < 0) {
-			int moved = s.x;
-			s.x = 0;
-			s.d = 2;
-			move_shark(s, dist - moved);
-		}
-		else {
-			int moved = C - 1 - s.x;
-			s.x = C - 1;
-			s.d = 3;
-			move_shark(s, dist - moved);
-		}
-	}
+void moving(Shark& shark, int dist) {
+  // 상하
+  if (shark.dir <= 1) {
+    int yy = shark.y + dy[shark.dir] * dist;
+    // 위로 범위 넘음
+    if (yy < 0) {
+      dist -= shark.y;
+      shark.y = 0;
+      shark.dir = 1;
+      moving(shark, dist);
+    }
+    // 아래로 범위 넘음
+    else if (yy >= R) {
+      dist -= (R - 1 - shark.y);
+      shark.y = R - 1;
+      shark.dir = 0;
+      moving(shark, dist);
+    }
+    else {
+      shark.y = yy;
+    }
+  }
+  // 좌우
+  else {
+    int xx = shark.x + dx[shark.dir] * dist;
+    // 좌로 범위 넘음
+    if (xx < 0) {
+      dist -= shark.x;
+      shark.x = 0;
+      shark.dir = 2;
+      moving(shark, dist);
+    }
+    // 우로 범위 넘음
+    else if (xx >= C) {
+      dist -= (C - 1 - shark.x);
+      shark.x = C - 1;
+      shark.dir = 3;
+      moving(shark, dist);
+    }
+    else {
+      shark.x = xx;
+    }
+  }
 }
 
-int catch_shark(int x) {
-	int ret = 0;
-	for(int y = 0; y < R; ++y) {
-		if (shark_idx[y][x] != -1) {
-			Info& shark = sharks[shark_idx[y][x]];
-			if (shark.eaten) continue;
-			shark_idx[y][x] = -1;
-			ret = shark.size;
-			shark.eaten = true;
-			break;
-		}
-	}
-	return ret;
+int fishing(int c) {
+  for (int r = 0; r < R; ++r) {
+    if (sharkIdx[r][c] != -1) {
+      Shark& shark = sharks[sharkIdx[r][c]];
+      shark.out = true;
+      sharkIdx[r][c] = -1;
+      return shark.size;
+    }
+  }
+  return 0;
 }
 
-void input() {
-	memset(shark_idx, -1, sizeof(shark_idx));
-	scanf("%d %d %d", &R, &C, &M);
-	sharks.resize(M);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
 
-	for (int i = 0; i < M; ++i) {
-		int r, c, s, d, z;
-		scanf("%d %d %d %d %d", &r, &c, &s, &d, &z);
-		--r; --c; --d;
-		if (d <= 1) {
-			s = s % (R * 2 - 2);
-		}
-		else {
-			s = s % (C * 2 - 2);
-		}
-		sharks[i] = { r, c, d, s, z, false };
-		shark_idx[r][c] = i;
-	}
+  memset(sharkIdx, -1, sizeof(sharkIdx));
+
+  cin >> R >> C >> M;
+  for (int i = 0; i < M; ++i) {
+    int r, c, s, d, z;
+    cin >> r >> c >> s >> d >> z;
+    --r; --c; --d;
+    if (d <= 1) s %= (2 * R - 2);
+    else s %= (2 * C - 2);
+    sharks.push_back({ r, c, s, d, z, false });
+    sharkIdx[r][c] = i;
+  }
 }
 ```
 </details>
@@ -2530,8 +2530,9 @@ void input() {
 
 1. 최대 100번의 반복을 하므로, 첫 상어 개수를 매 반복마다 순회한다고 해도 최대 O(100 x 100 x 100) = O(1,000,000) 이므로 시간 안에 수행 가능하다.
 
-2. 따라서 Info 구조체 안에 bool eaten 변수를 사용하여 구현해도 된다는 것을 알 수 있다. 
-   (안쓰면 매번 먹힌 상어를 지워줘야 함.)
+2. 따라서 Info 구조체 안에 bool out 변수를 사용하여 구현해도 된다는 것을 알 수 있다. 
+
+3. 문제에 따라 아무 상어도 먹히지 않는 입력이 주어질 수 있다. 따라서 상어가 먹힘으로써 줄어듦을 이용하여 시간복잡도를 줄일려는 노력은 의미 없다.
 
 ***
 
