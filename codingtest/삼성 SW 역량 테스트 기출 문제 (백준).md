@@ -2544,122 +2544,116 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
 #include <vector>
 #include <algorithm>
 using namespace std;
 
-int r, c, k, A[100][100], cnt[101], r_num, c_num;
-void input();
+struct Info {
+  int n, c;
+  bool operator<(const Info& rhs) const {
+    if (c != rhs.c) return c < rhs.c;
+    return n < rhs.n;
+  }
+};
 
-int max_row;
-void sort_row(int y);
+int r, c, k;
+int rowNum = 3, colNum = 3;
+vector<vector<int>> A(100, vector<int>(100, 0));
+void revert();
+void init();
 
-int max_col;
-void sort_col(int x);
-
+int sortRow();
 
 int main() {
-	input();
-	if (A[r][c] == k) {
-		printf("0");
-		return 0;
-	}
+  init();
 
-	for (int t = 1; t <= 100; ++t) {
-		if (r_num >= c_num) {
-			max_col = 0;
-			for (int y = 0; y < r_num; ++y) {
-				sort_row(y);
-			}
-			c_num = max_col;
-		}
-		else {
-			max_row = 0;
-			for (int x = 0; x < c_num; ++x) {
-				sort_col(x);
-			}
-			r_num = max_row;
-		}
+  if (A[r][c] == k) {
+    cout << 0;
+    return 0;
+  }
 
-		if (A[r][c] == k) {
-			printf("%d", t);
-			return 0;
-		}
-	}
+  for (int t = 1; t <= 100; ++t) {
 
-	printf("-1");
-	return 0;
+    bool R = rowNum >= colNum;
+
+    if (R) {
+      colNum = sortRow();
+    }
+    else {
+      revert();
+      colNum = sortRow();
+      revert();
+    }
+
+    if (A[r][c] == k) {
+      cout << t;
+      return 0;
+    }
+  }
+
+  cout << -1;
+  return 0;
 }
 
-void sort_col(int x) {
-	memset(cnt, 0, sizeof(cnt));
-	for (int y = 0; y < r_num; ++y) {
-		++cnt[A[y][x]];
-		A[y][x] = 0;
-	}
-	vector<pair<int, int>> sorted;
-
-	for (int num = 1; num <= 100; ++num) {
-		if (cnt[num]) {
-			sorted.push_back({ cnt[num], num });
-		}
-	}
-	sort(sorted.begin(), sorted.end());
-
-	int idx = 0;
-	for (auto& p : sorted) {
-		A[idx++][x] = p.second;
-		A[idx++][x] = p.first;
-		if (idx == 100) break;
-	}
-
-	max_row = max(max_row, idx);
+int sortRow() {
+  int ret = 0;
+  for (int y = 0; y < rowNum; ++y) {
+    // 1. 숫자 카운트
+    vector<Info> infos;
+    int cnt[101] = { 0, };
+    for (int x = 0; x < colNum; ++x) {
+      if (A[y][x] > 0) {
+        ++cnt[A[y][x]];
+      }
+    }
+    // 2. (숫자, 개수) 추가 및 정렬
+    for (int n = 1; n <= 100; ++n) {
+      if (cnt[n] == 0) continue;
+      infos.push_back({ n, cnt[n] });
+    }
+    sort(infos.begin(), infos.end());
+    // 3. (숫자, 개수) 배열에 반영
+    A[y] = vector<int>(100, 0);
+    int idx = 0;
+    for (Info& info : infos) {
+      A[y][idx] = info.n;
+      A[y][idx + 1] = info.c;
+      idx += 2;
+      if (idx >= 100) break;
+    }
+    ret = max(ret, idx);
+  }
+  return ret;
 }
 
-void sort_row(int y) {
-	memset(cnt, 0, sizeof(cnt));
-	for (int x = 0; x < c_num; ++x) {
-		++cnt[A[y][x]];
-		A[y][x] = 0;
-	}
-	vector<pair<int, int>> sorted;
-
-	for (int num = 1; num <= 100; ++num) {
-		if (cnt[num]) {
-			sorted.push_back({ cnt[num], num });
-		}
-	}
-	sort(sorted.begin(), sorted.end());
-
-	int idx = 0;
-	for (auto& p : sorted) {
-		A[y][idx++] = p.second;
-		A[y][idx++] = p.first;
-		if (idx == 100) break;
-	}
-
-	max_col = max(max_col, idx);
+void revert() {
+  for (int y = 0; y < 100; ++y) {
+    for (int x = y + 1; x < 100; ++x) {
+      swap(A[y][x], A[x][y]);
+    }
+  }
+  swap(rowNum, colNum);
 }
 
-void input() {
-	scanf("%d %d %d", &r, &c, &k);
-	--r; --c;
-	for (int i = 0; i < 3; ++i) {
-		for (int j = 0; j < 3; ++j) {
-			scanf("%d", &A[i][j]);
-		}
-	}
-	r_num = 3;
-	c_num = 3;
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> r >> c >> k;
+  --r; --c;
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      cin >> A[i][j];
+    }
+  }
 }
 ```
 </details>
 
 ### 설명
-1. 쉬운 구현 문제
-2. 반복문을 돌리기 전, 최초에 A[r][c] == k 인 경우를 빼먹으면 안된다.
+1. 반복문을 돌리기 전, 최초에 A[r][c] == k 인 경우를 빼먹으면 안된다.
+2. 쉬워보여도 꼭 기능별로 함수를 만들자.
 
 ***
 
