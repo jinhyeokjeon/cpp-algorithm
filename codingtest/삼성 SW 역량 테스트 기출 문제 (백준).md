@@ -2126,93 +2126,111 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
 #include <queue>
+#include <vector>
 #include <algorithm>
 using namespace std;
 
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
+
 struct Pos {
   int y, x;
+  bool operator<(const Pos& rhs) const {
+    if (y != rhs.y) return y < rhs.y;
+    return x < rhs.x;
+  }
 };
-Pos s_pos;
-int s_size, s_cnt;
+
+struct Shark {
+  Pos pos;
+  int size, cnt;
+};
 
 int N, board[20][20];
-void input();
+Shark shark;
+void init();
 
-int dist[20][20], min_dist;
-bool can_eat();
-int eat_move();
+Pos cand;
+vector<vector<int>> dist;
+bool choose();
 
 int main() {
-  input();
-  int ret = 0;
+  init();
 
+  int t = 0;
   while (true) {
-    if (!can_eat()) {
+    // 1. 먹을 수 있는 물고기 후보 선택
+    if (!choose()) {
       break;
     }
-    ret += eat_move();
+    // 2. 해당 물고기로 이동
+    shark.pos = cand;
+    // 3. 물고기 먹기
+    board[cand.y][cand.x] = 0;
+    --shark.cnt;
+    // 4. 크기 증가
+    if (shark.cnt == 0) {
+      ++shark.size;
+      shark.cnt = shark.size;
+    }
+    // 5. 시간 늘리기
+    t += dist[cand.y][cand.x];
   }
 
-  printf("%d", ret);
+  cout << t;
+
   return 0;
 }
 
-int eat_move() {
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      if (1 <= board[y][x] && board[y][x] < s_size && dist[y][x] == min_dist) {
-        s_pos = { y, x };
-        board[y][x] = 0;
-        --s_cnt;
-        if (s_cnt == 0) {
-          s_cnt = ++s_size;
-        }
-        return dist[y][x];
-      }
-    }
-  }
-  return -1;
-}
-
-bool can_eat() {
-  memset(dist, -1, sizeof(dist));
-  min_dist = 987654321;
+bool choose() {
   queue<Pos> q;
+  dist = vector<vector<int>>(N, vector<int>(N, -1));
+  vector<Pos> cands;
+  int minDist = -1;
 
-  q.push({ s_pos });
-  dist[s_pos.y][s_pos.x] = 0;
+  q.push(shark.pos);
+  dist[shark.pos.y][shark.pos.x] = 0;
 
   while (!q.empty()) {
     Pos here = q.front(); q.pop();
-    if (1 <= board[here.y][here.x] && board[here.y][here.x] < s_size) {
-      min_dist = min(min_dist, dist[here.y][here.x]);
+    if (minDist != -1 && dist[here.y][here.x] >= minDist) {
+      break;
     }
     for (int d = 0; d < 4; ++d) {
-      int yy = here.y + dy[d], xx = here.x + dx[d];
-      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-      if (dist[yy][xx] != -1 || board[yy][xx] > s_size) continue;
-      dist[yy][xx] = dist[here.y][here.x] + 1;
-      q.push({ yy, xx });
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N || dist[there.y][there.x] != -1) continue;
+      if (board[there.y][there.x] > shark.size) continue;
+      dist[there.y][there.x] = dist[here.y][here.x] + 1;
+      q.push(there);
+      if (board[there.y][there.x] == 0) continue;
+      if (board[there.y][there.x] < shark.size) {
+        minDist = dist[there.y][there.x];
+        cands.push_back(there);
+      }
     }
   }
 
-  return min_dist != 987654321;
+  if (cands.empty()) return false;
+
+  sort(cands.begin(), cands.end());
+  cand = cands[0];
+  return true;
 }
 
-void input() {
-  scanf("%d", &N);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
-      scanf("%d", &board[i][j]);
+      cin >> board[i][j];
       if (board[i][j] == 9) {
-        s_pos = { i, j };
-        s_size = 2;
-        s_cnt = 2;
         board[i][j] = 0;
+        shark.pos = { i, j };
+        shark.size = 2;
+        shark.cnt = 2;
       }
     }
   }
@@ -2223,6 +2241,9 @@ void input() {
 ### 설명
 bfs 구현 문제.
 
+bfs 탐색 시 거리가 가까운 정점부터 순차적으로 탐색된다는 것을 이용하면 코드를 간략하게 짤 수 있다.
+
+상어가 먹을 수 있는 물고기가 발견되는 순간의 거리가 최단거리가 됨을 알 수 있고, 해당 최단거리를 갖는 정점을 큐에서 꺼낸 이후부터는 탐색을 더 할 필요가 없다. (해당 최단 거리 + 1 인 정점을 탐색하므로)
 ***
 
 ## 17144. 미세먼지 안녕!
