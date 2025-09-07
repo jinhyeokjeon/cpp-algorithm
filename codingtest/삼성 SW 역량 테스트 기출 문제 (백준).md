@@ -2254,108 +2254,119 @@ bfs 탐색 시 거리가 가까운 정점부터 순차적으로 탐색된다는 
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
 #include <cstring>
+using namespace std;
 
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
-int R, C, T, board[50][50], tmp[50][50];
-int a_y;
-void input();
+
+struct Pos {
+  int y, x;
+};
+
+int R, C, T, dust[50][50];
+Pos air = { -1, -1 };
+void init();
 
 void spread();
-void aircondition();
+void cleaning();
 
 int main() {
-    input();
+  init();
 
-    for (int t = 0; t < T; ++t) {
-        spread();
-        aircondition();
+  for (int t = 0; t < T; ++t) {
+    // 1. 확산
+    spread();
+    // 2. 공기청정기 작동
+    cleaning();
+  }
+
+  int sum = 0;
+  for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < C; ++x) {
+      if (dust[y][x] == -1)continue;
+      sum += dust[y][x];
     }
+  }
+  cout << sum;
 
-    int sum = 0;
-    for (int y = 0; y < R; ++y) {
-        for (int x = 0; x < C; ++x) {
-            sum += board[y][x];
-        }
-    }
-    printf("%d", sum);
-
-    return 0;
+  return 0;
 }
 
-void aircondition() {
-    int y, x;
-    // 1. 위쪽 방향
-    y = a_y - 1, x = 0;
-    while (y >= 1) {
-        board[y][x] = board[y - 1][x];
-        --y;
-    }
-    while (x <= C - 2) {
-        board[y][x] = board[y][x + 1];
-        ++x;
-    }
-    while (y <= a_y - 1) {
-        board[y][x] = board[y + 1][x];
-        ++y;
-    }
-    while (x >= 2) {
-        board[y][x] = board[y][x - 1];
-        --x;
-    }
-    board[a_y][x] = 0;
-
-    // 2. 아래쪽 방향
-    y = a_y + 2, x = 0;
-    while (y <= R - 2) {
-        board[y][x] = board[y + 1][x];
-        ++y;
-    }
-    while (x <= C - 2) {
-        board[y][x] = board[y][x + 1];
-        ++x;
-    }
-    while (y >= a_y + 2) {
-        board[y][x] = board[y - 1][x];
-        --y;
-    }
-    while (x >= 2) {
-        board[y][x] = board[y][x - 1];
-        --x;
-    }
-    board[a_y + 1][x] = 0;
+void cleaning() {
+  // 1. 반시계
+  int y = air.y - 1, x = air.x;
+  while (y > 0) {
+    dust[y][x] = dust[y - 1][x];
+    --y;
+  }
+  while (x < C - 1) {
+    dust[y][x] = dust[y][x + 1];
+    ++x;
+  }
+  while (y < air.y) {
+    dust[y][x] = dust[y + 1][x];
+    ++y;
+  }
+  while (x > 1) {
+    dust[y][x] = dust[y][x - 1];
+    --x;
+  }
+  dust[air.y][air.x + 1] = 0;
+  // 2. 시계
+  y = air.y + 2, x = air.x;
+  while (y < R - 1) {
+    dust[y][x] = dust[y + 1][x];
+    ++y;
+  }
+  while (x < C - 1) {
+    dust[y][x] = dust[y][x + 1];
+    ++x;
+  }
+  while (y > air.y + 1) {
+    dust[y][x] = dust[y - 1][x];
+    --y;
+  }
+  while (x > 1) {
+    dust[y][x] = dust[y][x - 1];
+    --x;
+  }
+  dust[air.y + 1][air.x + 1] = 0;
 }
 
 void spread() {
-    memset(tmp, 0, sizeof(tmp));
-    board[a_y][0] = board[a_y + 1][0] = -1;
-    for (int y = 0; y < R; ++y) {
-        for (int x = 0; x < C; ++x) {
-            if (board[y][x] <= 0) continue;
-            int s_cnt = 0;
-            for (int d = 0; d < 4; ++d) {
-                int yy = y + dy[d], xx = x + dx[d];
-                if (yy < 0 || yy >= R || xx < 0 || xx >= C || board[yy][xx] == -1) continue;
-                ++s_cnt;
-                tmp[yy][xx] += board[y][x] / 5;
-            }
-            tmp[y][x] += board[y][x] - s_cnt * (board[y][x] / 5);
-        }
+  int tmp[50][50] = { 0, };
+  for (int y = 0; y < R; ++y) {
+    for (int x = 0; x < C; ++x) {
+      if (dust[y][x] <= 0) continue;
+      int sum = 0, amount = dust[y][x] / 5;
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (yy < 0 || yy >= R || xx < 0 || xx >= C || dust[yy][xx] == -1) continue;
+        tmp[yy][xx] += amount;
+        sum += amount;
+      }
+      tmp[y][x] += dust[y][x] - sum;
     }
-    memcpy(board, tmp, sizeof(board));
+  }
+  tmp[air.y][air.x] = -1;
+  tmp[air.y + 1][air.x] = -1;
+  memcpy(dust, tmp, sizeof(dust));
 }
 
-void input() {
-    scanf("%d %d %d", &R, &C, &T);
-    for (int y = 0; y < R; ++y) {
-        for (int x = 0; x < C; ++x) {
-            scanf("%d", &board[y][x]);
-            if (board[y][x] == -1 && a_y == 0) {
-                a_y = y;
-            }
-        }
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> R >> C >> T;
+  for (int i = 0; i < R; ++i) {
+    for (int j = 0; j < C; ++j) {
+      cin >> dust[i][j];
+      if (dust[i][j] == -1 && air.y == -1) {
+        air = { i, j };
+      }
     }
+  }
 }
 ```
 </details>
