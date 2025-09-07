@@ -2665,95 +2665,91 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
-#include <queue>
+#include <iostream>
+#include <vector>
 #include <algorithm>
+#include <queue>
 using namespace std;
 
 #define INF 987654321
 
 struct Pos {
-	int y, x;
+  int y, x;
 };
+
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
 
-Pos viruses[2500];
-int N, M, v_num;
-char board[50][50];
-void input();
+int N, M, blank, board[50][50];
+vector<Pos> viruses;
+void init();
 
-int chosed[10];
-void dfs(int idx, int from, int num);
-
-int min_time = INF;
-int dist[50][50];
-void calc();
+int chosed[10], ret = INF;
+int bfs();
+void calc(int idx, int from, int num);
 
 int main() {
-	input();
-	dfs(0, 0, M);
-	printf("%d", (min_time == INF ? -1 : min_time));
+  init();
+  calc(0, 0, M);
+  cout << (ret == INF ? -1 : ret);
+  return 0;
 }
 
-void calc() {
-	memset(dist, -1, sizeof(dist));
-	queue<Pos> q;
-	int max_time = 0;
+int bfs() {
+  queue<Pos> q;
+  vector<vector<int>> dist(N, vector<int>(N, -1));
+  int maxDist = 0, cnt = 0;
 
-	for (int i = 0; i < M; ++i) {
-		Pos& v = viruses[chosed[i]];
-		q.push(v);
-		dist[v.y][v.x] = 0;
-	}
+  for (int i = 0; i < M; ++i) {
+    q.push({ viruses[chosed[i]] });
+    dist[viruses[chosed[i]].y][viruses[chosed[i]].x] = 0;
+  }
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    if (board[here.y][here.x] == 0) {
+      ++cnt;
+      maxDist = max(maxDist, dist[here.y][here.x]);
+    }
+    for (int d = 0; d < 4; ++d) {
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N) continue;
+      if (dist[there.y][there.x] != -1 || board[there.y][there.x] == 1) continue;
+      q.push(there);
+      dist[there.y][there.x] = dist[here.y][here.x] + 1;
+    }
+  }
 
-	while (!q.empty()) {
-		Pos here = q.front(); q.pop();
+  if (cnt != blank) return INF;
 
-		for (int d = 0; d < 4; ++d) {
-			int yy = here.y + dy[d], xx = here.x + dx[d];
-			if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-			if (board[yy][xx] == 1 || dist[yy][xx] != -1) continue;
-			dist[yy][xx] = dist[here.y][here.x] + 1;
-			q.push({ yy,xx });
-		}
-	}
-
-	for (int y = 0; y < N; ++y) {
-		for (int x = 0; x < N; ++x) {
-			if (board[y][x] != 0) continue;
-			if (dist[y][x] == -1) {
-				return;
-			}
-			max_time = max(max_time, dist[y][x]);
-		}
-	}
-
-	min_time = min(min_time, max_time);
+  return maxDist;
 }
 
-void dfs(int idx, int from, int num) {
-	if (num == 0) {
-		calc();
-		return;
-	}
-
-	for (int here = from; here <= v_num - num; ++here) {
-		chosed[idx] = here;
-		dfs(idx + 1, here + 1, num - 1);
-	}
+void calc(int idx, int from, int num) {
+  if (num == 0) {
+    ret = min(ret, bfs());
+    return;
+  }
+  for (int here = from; here <= viruses.size() - num; ++here) {
+    chosed[idx] = here;
+    calc(idx + 1, here + 1, num - 1);
+  }
 }
 
-void input() {
-	scanf("%d %d", &N, &M);
-	for (int i = 0; i < N; ++i) {
-		for (int j = 0; j < N; ++j) {
-			scanf("%hhd", &board[i][j]);
-			if (board[i][j] == 2) {
-				viruses[v_num++] = { i, j };
-			}
-		}
-	}
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> M;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      cin >> board[i][j];
+      if (board[i][j] == 2) {
+        viruses.push_back({ i, j });
+      }
+      else if (board[i][j] == 0) {
+        ++blank;
+      }
+    }
+  }
 }
 ```
 </details>
