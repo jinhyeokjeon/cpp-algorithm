@@ -3009,160 +3009,130 @@ h.y, h.x, h.idx는 해당 코드에서 이동되는 좌표를 기준으로 변�
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <queue>
+#include <iostream>
 #include <vector>
+#include <queue>
+#include <cstring>
 using namespace std;
 
 struct Pos {
-	int y, x;
+  int y, x;
 };
+
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
-int N, M, T, circle[51][50];
-void input();
 
-void rotate(int num, int dir, int cnt);
+int N, M, T, sum, cnt;
+int board[50][50];
+void init();
 
-bool discovered[51][50];
-bool calc1();
-void calc2();
+void rotate(int num, int dir, int k);
+
+bool discovered[50][50];
+bool bfs(int y, int x);
 
 void print() {
-	printf("\n");
-	for (int num = 1; num <= N; ++num) {
-		for (int i = 0; i < M; ++i) {
-			printf("%d ", circle[num][i]);
-		}
-		printf("\n");
-	}
+  cout << endl;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < M; ++x) {
+      cout << board[y][x] << ' ';
+    }
+    cout << endl;
+  }
 }
 
 int main() {
-	input();
-	while (T--) {
-		int x, d, k;
-		scanf("%d %d %d", &x, &d, &k);
-		for (int num = 1; num <= N; ++num) {
-			if (num % x == 0) {
-				rotate(num, d, k);
-			}
-		}
-		if (!calc1()) {
-			calc2();
-		}
-	}
+  init();
 
-	int sum = 0;
-	for (int num = 1; num <= N; ++num) {
-		for (int i = 0; i < M; ++i) {
-			sum += circle[num][i];
-		}
-	}
-	printf("%d", sum);
+  while (T--) {
+    // 1. 원판 회전
+    int x, d, k;
+    cin >> x >> d >> k;
+    for (int num = x; num <= N; num += x) {
+      rotate(num - 1, (d == 0 ? 1 : -1), k);
+    }
 
-	return 0;
+    // 2. 인접한 수 찾아서 지우기
+    bool erased = false;
+    memset(discovered, false, sizeof(discovered));
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < M; ++x) {
+        if (!discovered[y][x] && board[y][x] != 0) {
+          if (bfs(y, x)) erased = true;
+        }
+      }
+    }
+
+    if (erased) continue;
+
+    // 3. 지워진 수 없으면 평균 구해서 빼고 더하는 과정 수행
+    double avg = (double)sum / cnt;
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < M; ++x) {
+        if (board[y][x] == 0) continue;
+        if (board[y][x] < avg) {
+          ++board[y][x];
+          ++sum;
+        }
+        else if (board[y][x] > avg) {
+          --board[y][x];
+          --sum;
+        }
+      }
+    }
+  }
+
+  cout << sum;
+
+  return 0;
 }
 
-void calc2() {
-	double sum = 0;
-	int cnt = 0;
-	for (int num = 1; num <= N; ++num) {
-		for (int i = 0; i < M; ++i) {
-			if (circle[num][i]) {
-				sum += circle[num][i];
-				++cnt;
-			}
-		}
-	}
+bool bfs(int y, int x) {
+  queue<Pos> q;
+  q.push({ y, x });
+  discovered[y][x] = true;
+  vector<Pos> visited;
 
-	sum /= cnt;
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    visited.push_back(here);
+    for (int d = 0; d < 4; ++d) {
+      Pos there = { here.y + dy[d], (here.x + dx[d] + M) % M };
+      if (there.y < 0 || there.y >= N) continue;
+      if (discovered[there.y][there.x] || board[there.y][there.x] != board[here.y][here.x]) continue;
+      discovered[there.y][there.x] = true;
+      q.push({ there.y, there.x });
+    }
+  }
+  if (visited.size() == 1) return false;
 
-	for (int num = 1; num <= N; ++num) {
-		for (int i = 0; i < M; ++i) {
-			if (circle[num][i]) {
-				if (circle[num][i] > sum) {
-					--circle[num][i];
-				}
-				else if(circle[num][i] < sum) {
-					++circle[num][i];
-				}
-			}
-		}
-	}
+  for (Pos& pos : visited) {
+    sum -= board[pos.y][pos.x];
+    board[pos.y][pos.x] = 0;
+  }
+  cnt -= visited.size();
+  return true;
 }
 
-bool bfs(int num, int i) {
-	queue<Pos> q;
-	vector<Pos> v;
-
-	discovered[num][i] = true;
-	q.push({ num, i });
-	    
-	while (!q.empty()) {
-		Pos here = q.front(); q.pop();
-		v.push_back(here);
-		for (int d = 0; d < 4; ++d) {
-			int yy = here.y + dy[d], xx = here.x + dx[d];
-			if (xx == -1) xx = M - 1;
-			else if (xx == M) xx = 0;
-			if (yy <= 0 || yy > N || discovered[yy][xx]) continue;
-			if (circle[here.y][here.x] == circle[yy][xx]) {
-				discovered[yy][xx] = true;
-				q.push({ yy, xx });
-			}
-		}
-	}
-
-	if (v.size() == 1) return false;
-
-	for (Pos& p : v) {
-		circle[p.y][p.x] = 0;
-	}
-
-	return true;
+void rotate(int num, int dir, int k) {
+  int tmp[50];
+  for (int c = 0; c < M; ++c) {
+    tmp[(c + dir * k + M) % M] = board[num][c];
+  }
+  memcpy(board[num], tmp, sizeof(tmp));
 }
 
-bool calc1() {
-	memset(discovered, false, sizeof(discovered));
-	bool check = false;
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
 
-	for (int num = 1; num <= N; ++num) {
-		for (int i = 0; i < M; ++i) {
-			if (!discovered[num][i] && circle[num][i] != 0) {
-				if (bfs(num, i)) {
-				check = true;
-				}
-			}
-		}
-	}
-
-	return check;
-}
-
-void rotate(int num, int dir, int cnt) {
-	int tmp[50] = { 0, };
-
-	if (dir == 0) {
-		for(int i = 0; i < M; ++i) {
-			tmp[(i + cnt) % M] = circle[num][i];
-		}
-	}
-	else {
-		for (int i = 0; i < M; ++i) {
-			tmp[(i - cnt + M) % M] = circle[num][i];
-		}
-	}
-
-	memcpy(circle[num], tmp, sizeof(tmp));
-}
-
-void input() {
-	scanf("%d %d %d", &N, &M, &T);
-	for (int i = 1; i <= N; ++i) {
-		for (int j = 0; j < M; ++j) {
-			scanf("%d", &circle[i][j]);
-		}
-	}
+  cin >> N >> M >> T;
+  cnt = N * M;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < M; ++j) {
+      cin >> board[i][j];
+      sum += board[i][j];
+    }
+  }
 }
 ```
 </details>
@@ -3173,6 +3143,8 @@ void input() {
 지운 수를 0으로 정의하였으므로, 값이 0인 부분에서 bfs를 수행하지 않도록 해야한다.
 
 bfs / dfs 에서 다음 노드로 탐색을 파고 들어갈 때, 탐색 조건을 만족하는지 꼭 확인해야한다.
+
+문제 조건 잘 확인하기. 평균보다 '큰' 수 -1, '작은' 수 +1 이므로 같은 수에 대해서는 아무 연산이 일어나지 않는다.
 
 **|| 연산자를 사용하면, 왼쪽이 참일 경우 오른쪽은 수행하지 않는다.**
 
