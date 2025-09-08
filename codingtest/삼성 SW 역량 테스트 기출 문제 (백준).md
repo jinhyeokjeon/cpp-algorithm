@@ -3166,68 +3166,82 @@ check = check || bfs(num, i); // 이렇게 하면 안됨.
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+#include <algorithm>
+#include <cstring>
+using namespace std;
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
+const int score[33] = { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
+32, 34, 36, 38, 40, 13, 16, 19, 25, 30, 35, 28, 27, 26, 22, 24, 0 };
 
-int score[33] = { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
-                 32, 34, 36, 38, 40, 13, 16, 19, 25, 30, 35, 22, 24, 28, 27, 26, 0 };
-int next_pos[33][2] = { {1}, {2}, {3}, {4}, {5}, {6, 21}, {7}, {8}, {9}, {10},
-                       {11, 27}, {12}, {13}, {14}, {15}, {16, 29}, {17},
-                       {18}, {19}, {20}, {32}, {22}, {23}, {24}, {25},
-                       {26}, {20}, {28}, {24}, {30}, {31}, {24}, {0} };
-int h_pos[4], dice[10];
+const int nextPos[33] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
+16, 17, 18, 19, 20, 32, 22, 23, 24, 25, 26, 20, 28, 29, 24, 31, 24, -1 };
 
-int max_score;
-void dfs(int turn, int sum);
+int blue[33];
+
+int num[10];
+void init();
+
+int getPos(int here, int d);
+bool canGo(int p);
+
+int pos[4];
+int getPos(int p, int n);
+bool canGo(int p);
+int dfs(int turn, int sum);
 
 int main() {
-    for (int i = 0; i < 10; ++i) {
-        scanf("%d", &dice[i]);
-    }
-    dfs(0, 0);
-    printf("%d", max_score);
-    return 0;
+	init();
+	cout << dfs(0, 0);
+	return 0;
 }
 
-int get_there(int pos, int d) {
-    while (d--) {
-        if (pos == 32) break;
-        pos = next_pos[pos][0];
-    }
-    return pos;
+int getPos(int p, int n) {
+	if (blue[p]) p = blue[p];
+	else p = nextPos[p];
+	--n;
+	while (n-- && nextPos[p] != -1) {
+		p = nextPos[p];
+	}
+	return p;
 }
 
-bool can_go(int there) {
-    for (int i = 0; i < 4; ++i) {
-        if (h_pos[i] != 32 && h_pos[i] == there) {
-            return false;
-        }
-    }
-    return true;
+bool canGo(int p) {
+	for (int h = 0; h < 4; ++h) {
+		if (pos[h] < 32 && pos[h] == p) return false;
+	}
+	return true;
 }
 
-void dfs(int turn, int sum) {
-    if (turn == 10) {
-        max_score = max(max_score, sum);
-        return;
-    }
+int dfs(int turn, int sum) {
+	if (turn == 10) {
+		return sum;
+	}
 
-    for (int h = 0; h < 4; ++h) {
-        int here = h_pos[h], there;
-        if (here == 32) continue;
-        if (next_pos[here][1] == 0) {
-            there = get_there(next_pos[here][0], dice[turn] - 1);
-        }
-        else {
-            there = get_there(next_pos[here][1], dice[turn] - 1);
-        }
-        if (can_go(there)) {
-            h_pos[h] = there;
-            dfs(turn + 1, sum + score[there]);
-            h_pos[h] = here;
-        }
-    }
+	int tmp[4]; memcpy(tmp, pos, sizeof(pos));
+
+	int ret = 0;
+	for (int h = 0; h < 4; ++h) {
+		if (pos[h] == 32) continue;
+		int p = getPos(pos[h], num[turn]);
+		if (!canGo(p)) continue;
+		pos[h] = p;
+		ret = max(ret, dfs(turn + 1, sum + score[p]));
+		memcpy(pos, tmp, sizeof(pos));
+	}
+
+	return ret;
+}
+
+void init() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
+
+	blue[5] = 21; blue[10] = 30; blue[15] = 27;
+
+	for (int i = 0; i < 10; ++i) {
+		cin >> num[i];
+	}
 }
 ```
 </details>
