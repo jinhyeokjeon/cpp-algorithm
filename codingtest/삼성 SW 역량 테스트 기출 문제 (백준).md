@@ -3213,7 +3213,7 @@ bool canGo(int p) {
 	return true;
 }
 
-int dfs(int turn, int sum) {
+int dfs(int turn, int sum) { // 말들의 위치가 pos로 주어지고 지금까지의 점수 합이 sum일 때, turn ~ 9 턴을 진행한 후의 최대 합 반환.
 	if (turn == 10) {
 		return sum;
 	}
