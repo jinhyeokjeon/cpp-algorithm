@@ -2890,127 +2890,94 @@ void input() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
+struct Horse { int y, x, d, idx; };
+
 const int dy[4] = { 0, 0, -1, 1 }, dx[4] = { 1, -1, 0, 0 };
-struct Info {
-    int y, x, d, idx;
-};
-int N, K;
-char color[12][12];
-Info horses[10];
-vector<int> horse_nums[12][12];
-void input();
 
-bool move(int idx);
-bool move_white(int idx);
-bool move_red(int idx);
+int N, K, board[12][12]; // 0: 흰, 1: 빨, 2:파
+vector<Horse> horses;
+vector<int> horseIdxs[12][12];
+void init();
 
-void print(int num) {
-    printf("\n");
-    printf("move %d\n", num);
-    for (int y = 0; y < N; ++y) {
-        for (int x = 0; x < N; ++x) {
-            printf("%d ", horse_nums[y][x].size());
-        }
-        printf("\n");
-    }
-}
+bool moveHorse(Horse& h);
 
 int main() {
-    input();
-    for (int turn = 1; turn <= 1000; ++turn) {
-        for (int h = 0; h < K; ++h) {
-            if (!move(h)) {
-                printf("%d", turn);
-                return 0;
-            }
-        }
+  init();
+
+  for (int turn = 1; turn <= 1000; ++turn) {
+    bool moreThan4 = false;
+    for (int i = 0; i < horses.size(); ++i) {
+      Horse& h = horses[i];
+      moreThan4 = moveHorse(h);
+      if (moreThan4) {
+        cout << turn;
+        return 0;
+      }
     }
-    printf("-1");
-    return 0;
+  }
+
+  cout << "-1";
+  return 0;
 }
 
-bool move(int idx) {
-    Info& h = horses[idx];
-    int yy = h.y + dy[h.d], xx = h.x + dx[h.d];
-    if (yy < 0 || yy >= N || xx < 0 || xx >= N || color[yy][xx] == 2) { // 경계 밖 or 파란색
-        h.d = (h.d <= 1 ? 1 - h.d : 5 - h.d);
-        yy = h.y + dy[h.d], xx = h.x + dx[h.d];
-        if (yy < 0 || yy >= N || xx < 0 || xx >= N || color[yy][xx] == 2) {
-            return true;
-        }
-        else if (color[yy][xx] == 0) {
-            return move_white(idx);
-        }
-        else {
-            return move_red(idx);
-        }
+bool moveHorse(Horse& h) {
+  int y = h.y, x = h.x, hIdx = h.idx;
+  int yy = h.y + dy[h.d], xx = h.x + dx[h.d];
+  // 벗어나는 경우거나 파란색인 경우 예외처리
+  if (yy < 0 || yy >= N || xx < 0 || xx >= N || board[yy][xx] == 2) {
+    h.d = (h.d <= 1 ? 1 - h.d : 5 - h.d);
+    yy = h.y + dy[h.d]; xx = h.x + dx[h.d];
+    // 반대로 바꾼 후에도 파란색이거나 벗어나는 경우 종료
+    if (yy < 0 || yy >= N || xx < 0 || xx >= N || board[yy][xx] == 2) {
+      return false;
     }
-    else if (color[yy][xx] == 0) { // 흰색
-        return move_white(idx);
+  }
+
+  // 1. horses 배열 갱신
+  for (int idx = hIdx; idx < horseIdxs[y][x].size(); ++idx) {
+    Horse& horse = horses[horseIdxs[y][x][idx]];
+    horse.y = yy; horse.x = xx; horse.idx = horseIdxs[yy][xx].size() + idx - hIdx;
+  }
+
+  // 2. horseIdxs 배열 갱신
+  horseIdxs[yy][xx].insert(horseIdxs[yy][xx].end(), horseIdxs[y][x].begin() + hIdx, horseIdxs[y][x].end());
+  horseIdxs[y][x].erase(horseIdxs[y][x].begin() + hIdx, horseIdxs[y][x].end());
+
+  // 3. 빨간색인 경우 순서 바꾸기
+  if (board[yy][xx] == 1) {
+    reverse(horseIdxs[yy][xx].begin() + h.idx, horseIdxs[yy][xx].end());
+    for (int idx = h.idx; idx < horseIdxs[yy][xx].size(); ++idx) {
+      Horse& horse = horses[horseIdxs[yy][xx][idx]];
+      horse.idx = idx;
     }
-    else { // 빨간색
-        return move_red(idx);
-    }
+  }
+
+  return horseIdxs[yy][xx].size() >= 4;
 }
 
-bool move_white(int idx) {
-    Info& h = horses[idx];
-    int y = h.y, x = h.x, yy = h.y + dy[h.d], xx = h.x + dx[h.d];
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
 
-    vector<int>& from = horse_nums[y][x];
-    vector<int>& to = horse_nums[yy][xx];
-
-    int start = h.idx;
-    for (int i = start; i < from.size(); ++i) {
-        horses[from[i]].y = yy;
-        horses[from[i]].x = xx;
-        horses[from[i]].idx = to.size();
-        to.push_back(from[i]);
+  cin >> N >> K;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      cin >> board[y][x];
     }
+  }
 
-    from.erase(from.begin() + start, from.end());
-
-    return horse_nums[yy][xx].size() < 4;
-}
-
-bool move_red(int idx) {
-    Info& h = horses[idx];
-    int y = h.y, x = h.x, yy = h.y + dy[h.d], xx = h.x + dx[h.d];
-
-    vector<int>& from = horse_nums[y][x];
-    vector<int>& to = horse_nums[yy][xx];
-
-    int start = h.idx;
-    for (int i = from.size() - 1; i >= start; --i) {
-        horses[from[i]].y = yy;
-        horses[from[i]].x = xx;
-        horses[from[i]].idx = to.size();
-        to.push_back(from[i]);
-    }
-
-    from.erase(from.begin() + start, from.end());
-
-    return horse_nums[yy][xx].size() < 4;
-}
-
-void input() {
-    scanf("%d %d", &N, &K);
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            scanf("%hhd", &color[i][j]);
-        }
-    }
-    for (int i = 0; i < K; ++i) {
-        int y, x, d;
-        scanf("%d %d %d", &y, &x, &d);
-        --y; --x; --d;
-        horses[i] = { y, x, d, 0 };
-        horse_nums[y][x].push_back(i);
-    }
+  for (int i = 0; i < K; ++i) {
+    int y, x, d;
+    cin >> y >> x >> d;
+    --y; --x; --d;
+    horses.push_back({ y, x, d, 0 });
+    horseIdxs[y][x].push_back(i);
+  }
 }
 ```
 </details>
@@ -3019,6 +2986,18 @@ void input() {
 1. 말은 번호 순서대로 움직이므로 말들의 정보를 vector에 일렬로 저장한다.
 
 2. 보드를 나타내는 2차원 배열 위에서는, 해당 칸에 존재하는 말들의 vector 상의 인덱스를 저장한다.
+
+3. 참조형 변수를 사용할 때는 이 값이 변경된 값일 수도 있음을 꼭 생각해야 한다.
+
+```cpp
+Horse& horse = horses[horseIdxs[y][x][idx]];
+horse.y = yy; horse.x = xx; horse.idx = horseIdxs[yy][xx].size() + idx - hIdx;
+```
+위 코드에서 y, x, hIdx를 각각 h.y, h.x, h.idx 라고 적어 오류가 생겼었다.
+h.y, h.x, h.idx는 해당 코드에서 이동되는 좌표를 기준으로 변한다.
+따라서 h.y, h.x, h.idx 가 이동되기 전의 좌표를 기준한 값이라고 생각하면 안된다.
+
+이동하기 전 -> 이동 후 로직에서는 각각의 좌표를 꼭 변수에 담아놓자.
 
 ***
 
