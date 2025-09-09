@@ -3265,149 +3265,134 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+#include <algorithm>
+using namespace std;
 
-int N, t, y, x, score;
-bool green[6][4], blue[6][4];
+bool board[2][6][4];
+int put1(int t, int x); // O
+int put2(int t, int x1, int x2); /// OO
+int put3(int t, int x); // (OO)^c
 
-void move(bool (*board)[4]);
-int rem_block(bool (*board)[4]);
-void clr_block(bool (*board)[4]);
-
-void print(bool (*board)[4]) {
-  printf("\n");
-  for (int i = 0; i < 6; ++i) {
-    for (int j = 0; j < 4; ++j) {
-      printf("%d", board[i][j]);
-    }
-    printf("\n");
-  }
-}
+int deleteBlock(int t);
+void clearSpecial(int t);
 
 int main() {
-  scanf("%d", &N);
-  while (N--) {
-    scanf("%d %d %d", &t, &y, &x);
-    if (t == 1) {
-      green[1][x] = true;
-      blue[1][y] = true;
-    }
-    else if (t == 2) {
-      green[1][x] = green[1][x + 1] = true;
-      blue[0][y] = blue[1][y] = true;
-    }
-    else {
-      green[0][x] = green[1][x] = true;
-      blue[1][y] = blue[1][y + 1] = true;
-    }
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
 
-    move(green); move(blue);
-    score += rem_block(green);
-    score += rem_block(blue);
-    clr_block(green);
-    clr_block(blue);
-  }
+	int N; cin >> N;
+	int score = 0;
+	while (N--) {
+		int t, y, x;
+		cin >> t >> y >> x;
 
-  int cnt = 0;
-  for (int y = 2; y < 6; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      if (green[y][x]) ++cnt;
-      if (blue[y][x]) ++cnt;
-    }
-  }
-
-  printf("%d\n%d", score, cnt);
-  return 0;
+		if (t == 1) {
+			score += put1(0, x);
+			score += put1(1, y);
+		}
+		else if (t == 2) {
+			score += put2(0, x, x + 1);
+			score += put3(1, y);
+		}
+		else {
+			score += put3(0, x);
+			score += put2(1, y, y + 1);
+		}
+	}
+	cout << score << '\n';
+	
+	int block = 0;
+	for (int t = 0; t < 2; ++t) {
+		for (int y = 2; y <= 5; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				if (board[t][y][x]) {
+					++block;
+				}
+			}
+		}
+	}
+	cout << block;
+	return 0;
 }
 
-void clr_block(bool (*board)[4]) {
-  int cnt = 0;
-  for (int y = 0; y < 2; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      if (board[y][x]) {
-        ++cnt;
-        break;
-      }
-    }
-  }
-  if (cnt == 0) return;
-
-  for (int y = 5; y >= 2; --y) {
-    for (int x = 0; x < 4; ++x) {
-      board[y][x] = board[y - cnt][x];
-    }
-  }
-
-  for (int y = 0; y < 2; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      board[y][x] = false;
-    }
-  }
+void clearSpecial(int t) {
+	int specialCnt = 0;
+	for (int y = 0; y < 2; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			if (board[t][y][x]) {
+				++specialCnt;
+				break;
+			}
+		}
+	}
+	if (specialCnt == 0) return;
+	for (int y = 5; y >= 2; --y) {
+		for (int x = 0; x < 4; ++x) {
+			board[t][y][x] = board[t][y - specialCnt][x];
+			board[t][y - specialCnt][x] = false;
+		}
+	}
+	for (int y = 0; y < 2; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			board[t][y][x] = false;
+		}
+	}
 }
 
-int rem_block(bool (*board)[4]) {
-  int ret = 0;
-
-  while (true) {
-    bool rem = false;
-
-    for (int y = 5; y >= 2; --y) {
-      bool fill = true;
-      for (int x = 0; x < 4; ++x) {
-        if (!board[y][x]) {
-          fill = false;
-          break;
-        }
-      }
-
-      if (fill) {
-        ++ret; rem = true;
-        for (int yy = y; yy >= 1; --yy) {
-          for (int x = 0; x < 4; ++x) {
-            board[yy][x] = board[yy - 1][x];
-          }
-        }
-        for (int x = 0; x < 4; ++x) {
-          board[0][x] = false;
-        }
-        break;
-      }
-    }
-
-    if (!rem) break;
-  }
-
-  return ret;
+int deleteBlock(int t) {
+	int clearedY = -1, clearedCnt = 0;
+	for (int y = 5; y >= 2; --y) {
+		if (board[t][y][0] && board[t][y][1] && board[t][y][2] && board[t][y][3]) {
+			board[t][y][0] = board[t][y][1] = board[t][y][2] = board[t][y][3] = false;
+			clearedY = y; ++clearedCnt;
+		}
+	}
+	if (clearedY == -1) return 0;
+	for (int y = clearedY - 1; y >= 0; --y) {
+		for (int x = 0; x < 4; ++x) {
+			board[t][y + clearedCnt][x] = board[t][y][x];
+			board[t][y][x] = false;
+		}
+	}
+	return clearedCnt;
 }
 
-void move(bool (*board)[4]) {
-  // 블록이 어디까지 이동하는지 확인
-  int y;
-  for (y = 2; y < 6; ++y) {
-    bool check = true;
-    for (int x = 0; x < 4; ++x) {
-      if (board[1][x] && board[y][x]) {
-        check = false;
-        break;
-      }
-    }
-    if (!check) {
-      break;
-    }
-  }
-  --y;
-
-  // 블록 이동
-  if (y >= 2) {
-    for (int x = 0; x < 4; ++x) {
-      board[y][x] |= board[1][x];
-      board[1][x] = false;
-    }
-    for (int x = 0; x < 4; ++x) {
-      board[y - 1][x] |= board[0][x];
-      board[0][x] = false;
-    }
-  }
+int put1(int t, int x) {
+	int y = 1;
+	board[t][y][x] = true;
+	while (y < 5 && !board[t][y + 1][x]) {
+		board[t][y][x] = false;
+		board[t][y + 1][x] = true;
+		++y;
+	}
+	int ret = deleteBlock(t);
+	clearSpecial(t);
+	return ret;
+}
+int put2(int t, int x1, int x2) {
+	int y = 1;
+	board[t][y][x1] = board[t][y][x2] = true;
+	while (y < 5 && !board[t][y + 1][x1] && !board[t][y + 1][x2]) {
+		board[t][y][x1] = board[t][y][x2] = false;
+		board[t][y + 1][x1] = board[t][y + 1][x2] = true;
+		++y;
+	}
+	int ret = deleteBlock(t);
+	clearSpecial(t);
+	return ret;
+}
+int put3(int t, int x) {
+	int y = 1;
+	board[t][y - 1][x] = board[t][y][x] = true;
+	while (y < 5 && !board[t][y + 1][x]) {
+		board[t][y - 1][x] = false;
+		board[t][y + 1][x] = true;
+		++y;
+	}
+	int ret = deleteBlock(t);
+	clearSpecial(t);
+	return ret;
 }
 ```
 </details>
@@ -3416,6 +3401,8 @@ void move(bool (*board)[4]) {
 1. 파란색 보드를 6행 4열의 보드로 뒤집어서 생각하면, 초록색 보드와 동일한 코드로 작업을 수행할 수 있다.
 
 2. 이러한 복잡한 구현 문제는 절대 한번에 풀지 말고, 출력 함수를 먼저 만든 후, 매 기능을 구현할 때마다 출력을 하며 디버깅해야한다.
+
+3. 블록이 이동할때, 이동하기 전 위치가 모두 덮어질것이라고 생각하고 지워주질 않아 오류가 났다. 이런 가정으로 코드를 빼먹지 말고 꼭 로직을 그대로 코드로 옮겨야 한다.
 ***
 
 ## 19236. 청소년 상어
