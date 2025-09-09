@@ -3554,195 +3554,162 @@ int init(Info& info) {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
 #include <cstring>
-#include <vector>
 using namespace std;
-
-struct Smell {
-    int num, left;
-};
-
-struct Info {
-    int y, x, d;
-    bool out;
-};
 
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
 
-Smell smell[20][20];
+struct Shark {
+  int y, x, d; // 0: 위, 1: 아, 2:왼, 3: 오
+  bool out;
+};
+int movedNum[20][20];
+Shark sharks[401];
 
-int dir[401][4][4]; // 위, 아래, 왼, 오
-int N, M, K;
-int shark_num[20][20], tmp[20][20], shark_cnt;
-Info sharks[401];
-void input();
+int N, M, k, sharkCount;
+int prio[401][4][4];
+void init();
+
+struct Smell {
+  int num, left;
+};
+Smell smells[20][20];
+
+void moveShark(int num);
 
 void print() {
-    printf("<shark_num>\n");
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            printf("%d ", shark_num[i][j]);
-        }
-        printf("\n");
+  cout << "SMELL" << endl;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      cout << smells[y][x].left << ' ';
     }
-    printf("<smell>\n");
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            printf("[%d %d] ", smell[i][j].num, smell[i][j].left);
-        }
-        printf("\n");
+    cout << endl;
+  }
+  cout << "SMELLNUM" << endl;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      cout << smells[y][x].num << ' ';
     }
+    cout << endl;
+  }
+  cout << "NUM" << endl;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      cout << movedNum[y][x] << ' ';
+    }
+    cout << endl;
+  }
 }
-
-void print2() {
-    for (int num = 1; num <= M; ++num) {
-        printf("%d: [%d, %d], dir: %d\n", num, sharks[num].y, sharks[num].x, sharks[num].d);
-    }
-}
-
-void move_shark(int num);
 
 int main() {
-    input();
-    for (int t = 1; t <= 1000; ++t) {
-        // 1. 상어 이동
-        for (int num = 1; num <= M; ++num) {
-            if (sharks[num].out) continue;
-            move_shark(num);
-        }
-        
-        // 2. shark_num 배열 갱신
-        memset(tmp, 0, sizeof(tmp));
-        for (int num = 1; num <= M; ++num) {
-            Info& shark = sharks[num];
-            if (shark.out) continue;
-            if(tmp[shark.y][shark.x] == 0) {
-                tmp[shark.y][shark.x] = num;
-            }
-            else if (tmp[shark.y][shark.x] > num) {
-                sharks[tmp[shark.y][shark.x]].out = true;
-                tmp[shark.y][shark.x] = num;
-                --shark_cnt;
-            }
-            else if (tmp[shark.y][shark.x] < num) {
-                sharks[num].out = true;
-                --shark_cnt;
-            }
-        }
-        memcpy(shark_num, tmp, sizeof(shark_num));
+  init();
 
-        // 1번 상어만 남았는지 확인
-        if (shark_cnt == 1) {
-            printf("%d", t);
-            return 0;
-        }
-        
-        // 3. 냄새 뿌리기
-        for (int y = 0; y < N; ++y) {
-            for (int x = 0; x < N; ++x) {
-                if (shark_num[y][x]) {
-                    smell[y][x] = { shark_num[y][x], K + 1 };
-                }
-            }
-        }
-
-        // 4. 냄새 1 줄이기
-        for (int y = 0; y < N; ++y) {
-            for (int x = 0; x < N; ++x) {
-                if (smell[y][x].left) {
-                    --smell[y][x].left;
-                }
-            }
-        }
-
+  for (int t = 1; t <= 1000; ++t) {
+    // 1. 상어 이동 && 쫓아내기
+    memset(movedNum, 0, sizeof(movedNum));
+    for (int num = 1; num <= M; ++num) {
+      if (sharks[num].out) continue;
+      moveShark(num);
     }
+    if (sharkCount == 1) {
+      cout << t;
+      return 0;
+    }
+    // 2. 이동한 곳에 냄새 뿌리기 (3번 고려해서 k+1 뿌리기)
+    for (int num = 1; num <= M; ++num) {
+      if (sharks[num].out) continue;
+      smells[sharks[num].y][sharks[num].x].num = num;
+      smells[sharks[num].y][sharks[num].x].left = k + 1;
+    }
+    // 3. 기존 냄새 left 줄이기
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < N; ++x) {
+        if (smells[y][x].left == 0) continue;
+        --smells[y][x].left;
+      }
+    }
+  }
 
-    printf("-1");
-    return 0;
+  cout << -1;
+  return 0;
 }
 
-void move_shark(int num) {
-    Info& shark = sharks[num];
-    Info candi = { -1, };
+void moveShark(int num) {
+  Shark& shark = sharks[num];
 
-    int y = shark.y, x = shark.x;
-
-    // 1. 빈 칸 찾기
-    for (int i = 0; i < 4; ++i) {
-        int d = dir[num][shark.d][i];
-        int yy = y + dy[d];
-        int xx = x + dx[d];
-        if (yy < 0 || yy >= N || xx < 0 || xx >= N || smell[yy][xx].left > 0) {
-            continue;
-        }
-        candi = { yy, xx, d };
-        break;
+  // 냄새 없는 칸 탐색
+  for (int p = 0; p < 4; ++p) {
+    int d = prio[num][shark.d][p];
+    int yy = shark.y + dy[d];
+    int xx = shark.x + dx[d];
+    if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+    // 냄새 없는 칸 발견
+    if (smells[yy][xx].left == 0) {
+      // 현재 비어있음
+      if (movedNum[yy][xx] == 0) {
+        movedNum[yy][xx] = num;
+        shark.y = yy; shark.x = xx; shark.d = d;
+      }
+      // num보다 숫자 큰 상어 들어있음
+      else if (movedNum[yy][xx] > num) {
+        sharks[movedNum[yy][xx]].out = true;
+        --sharkCount;
+        movedNum[yy][xx] = num;
+        shark.y = yy; shark.x = xx; shark.d = d;
+      }
+      // num보다 숫자 작은 상어 들어있음
+      else {
+        shark.out = true;
+        --sharkCount;
+      }
+      return;
     }
+  }
 
-    // 2. 빈칸 있을 때
-    if (candi.y != -1) {
-        shark.y = candi.y;
-        shark.x = candi.x;
-        shark.d = candi.d;
-        return;
+  // 냄새 없는 칸이 없음
+  for (int p = 0; p < 4; ++p) {
+    int d = prio[num][shark.d][p];
+    int yy = shark.y + dy[d];
+    int xx = shark.x + dx[d];
+    if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+    // 번호 num 상어가 뿌린 냄새 칸
+    if (smells[yy][xx].num == num) {
+      movedNum[yy][xx] = num;
+      shark.y = yy; shark.x = xx; shark.d = d;
+      return;
     }
-
-    // 3. 빈칸 없을 때
-    for (int i = 0; i < 4; ++i) {
-        int d = dir[num][shark.d][i];
-        int yy = y + dy[d];
-        int xx = x + dx[d];
-        if (yy < 0 || yy >= N || xx < 0 || xx >= N) {
-            continue;
-        }
-        if (smell[yy][xx].num == num) {
-            candi = { yy, xx, d };
-            break;
-        }
-    }
-
-
-    if (candi.y != -1) {
-        shark.y = candi.y;
-        shark.x = candi.x;
-        shark.d = candi.d;
-    }
+  }
 }
 
-void input() {
-    scanf("%d %d %d", &N, &M, &K);
-    shark_cnt = M;
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            scanf("%d", &shark_num[i][j]);
-            if (shark_num[i][j] > 0) {
-                sharks[shark_num[i][j]] = { i, j, 0, false };
-            }
-        }
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> M >> k;
+  sharkCount = M;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      int num; cin >> num;
+      if (num) {
+        sharks[num] = { y, x, 0, false };
+        smells[y][x] = { num, k };
+      }
     }
-    for (int num = 1; num <= M; ++num) {
-        int d; scanf("%d", &d);
-        sharks[num].d = d - 1;
+  }
+  for (int num = 1; num <= M; ++num) {
+    cin >> sharks[num].d;
+    --sharks[num].d;
+  }
+
+  for (int num = 1; num <= M; ++num) {
+    for (int d = 0; d < 4; ++d) {
+      for (int p = 0; p < 4; ++p) {
+        cin >> prio[num][d][p];
+        --prio[num][d][p];
+      }
     }
-    for (int num = 1; num <= M; ++num) {
-        for (int d = 0; d < 4; ++d) {
-            for (int i = 0; i < 4; ++i) {
-                int to; scanf("%d", &to);
-                dir[num][d][i] = to - 1;
-            }
-        }
-    }
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            if (shark_num[i][j]) {
-                smell[i][j] = { shark_num[i][j], K };
-            }
-            else {
-                smell[i][j].left = 0;
-            }
-        }
-    }
+  }
 }
 ```
 </details>
