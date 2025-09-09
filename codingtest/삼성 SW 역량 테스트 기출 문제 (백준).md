@@ -3166,82 +3166,68 @@ check = check || bfs(num, i); // 이렇게 하면 안됨.
 <summary>C++</summary>
 
 ```cpp
-#include <iostream>
-#include <algorithm>
-#include <cstring>
-using namespace std;
+#include <cstdio>
 
-const int score[33] = { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
-32, 34, 36, 38, 40, 13, 16, 19, 25, 30, 35, 28, 27, 26, 22, 24, 0 };
+#define max(a, b) ((a) > (b) ? (a) : (b))
 
-const int nextPos[33] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 
-16, 17, 18, 19, 20, 32, 22, 23, 24, 25, 26, 20, 28, 29, 24, 31, 24, -1 };
+int score[33] = { 0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30,
+                 32, 34, 36, 38, 40, 13, 16, 19, 25, 30, 35, 22, 24, 28, 27, 26, 0 };
+int next_pos[33][2] = { {1}, {2}, {3}, {4}, {5}, {6, 21}, {7}, {8}, {9}, {10},
+                       {11, 27}, {12}, {13}, {14}, {15}, {16, 29}, {17},
+                       {18}, {19}, {20}, {32}, {22}, {23}, {24}, {25},
+                       {26}, {20}, {28}, {24}, {30}, {31}, {24}, {0} };
+int h_pos[4], dice[10];
 
-int blue[33];
-
-int num[10];
-void init();
-
-int getPos(int here, int d);
-bool canGo(int p);
-
-int pos[4];
-int getPos(int p, int n);
-bool canGo(int p);
-int dfs(int turn, int sum);
+int max_score;
+void dfs(int turn, int sum);
 
 int main() {
-	init();
-	cout << dfs(0, 0);
-	return 0;
+    for (int i = 0; i < 10; ++i) {
+        scanf("%d", &dice[i]);
+    }
+    dfs(0, 0);
+    printf("%d", max_score);
+    return 0;
 }
 
-int getPos(int p, int n) {
-	if (blue[p]) p = blue[p];
-	else p = nextPos[p];
-	--n;
-	while (n-- && nextPos[p] != -1) {
-		p = nextPos[p];
-	}
-	return p;
+int get_there(int pos, int d) {
+    while (d--) {
+        if (pos == 32) break;
+        pos = next_pos[pos][0];
+    }
+    return pos;
 }
 
-bool canGo(int p) {
-	for (int h = 0; h < 4; ++h) {
-		if (pos[h] < 32 && pos[h] == p) return false;
-	}
-	return true;
+bool can_go(int there) {
+    for (int i = 0; i < 4; ++i) {
+        if (h_pos[i] != 32 && h_pos[i] == there) {
+            return false;
+        }
+    }
+    return true;
 }
 
-int dfs(int turn, int sum) { // 말들의 위치가 pos로 주어지고 지금까지의 점수 합이 sum일 때, turn ~ 9 턴을 진행한 후의 최대 합 반환.
-	if (turn == 10) {
-		return sum;
-	}
+void dfs(int turn, int sum) {
+    if (turn == 10) {
+        max_score = max(max_score, sum);
+        return;
+    }
 
-	int tmp[4]; memcpy(tmp, pos, sizeof(pos));
-
-	int ret = 0;
-	for (int h = 0; h < 4; ++h) {
-		if (pos[h] == 32) continue;
-		int p = getPos(pos[h], num[turn]);
-		if (!canGo(p)) continue;
-		pos[h] = p;
-		ret = max(ret, dfs(turn + 1, sum + score[p]));
-		memcpy(pos, tmp, sizeof(pos));
-	}
-
-	return ret;
-}
-
-void init() {
-	ios_base::sync_with_stdio(false);
-	cin.tie(NULL);
-
-	blue[5] = 21; blue[10] = 30; blue[15] = 27;
-
-	for (int i = 0; i < 10; ++i) {
-		cin >> num[i];
-	}
+    for (int h = 0; h < 4; ++h) {
+        int here = h_pos[h], there;
+        if (here == 32) continue;
+        if (next_pos[here][1] == 0) {
+            there = get_there(next_pos[here][0], dice[turn] - 1);
+        }
+        else {
+            there = get_there(next_pos[here][1], dice[turn] - 1);
+        }
+        if (can_go(there)) {
+            h_pos[h] = there;
+            dfs(turn + 1, sum + score[there]);
+            h_pos[h] = here;
+        }
+    }
 }
 ```
 </details>
@@ -3265,134 +3251,149 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <iostream>
-#include <algorithm>
-using namespace std;
+#include <cstdio>
 
-bool board[2][6][4];
-int put1(int t, int x); // O
-int put2(int t, int x1, int x2); /// OO
-int put3(int t, int x); // (OO)^c
+int N, t, y, x, score;
+bool green[6][4], blue[6][4];
 
-int deleteBlock(int t);
-void clearSpecial(int t);
+void move(bool (*board)[4]);
+int rem_block(bool (*board)[4]);
+void clr_block(bool (*board)[4]);
+
+void print(bool (*board)[4]) {
+  printf("\n");
+  for (int i = 0; i < 6; ++i) {
+    for (int j = 0; j < 4; ++j) {
+      printf("%d", board[i][j]);
+    }
+    printf("\n");
+  }
+}
 
 int main() {
-	ios_base::sync_with_stdio(false);
-	cin.tie(NULL);
+  scanf("%d", &N);
+  while (N--) {
+    scanf("%d %d %d", &t, &y, &x);
+    if (t == 1) {
+      green[1][x] = true;
+      blue[1][y] = true;
+    }
+    else if (t == 2) {
+      green[1][x] = green[1][x + 1] = true;
+      blue[0][y] = blue[1][y] = true;
+    }
+    else {
+      green[0][x] = green[1][x] = true;
+      blue[1][y] = blue[1][y + 1] = true;
+    }
 
-	int N; cin >> N;
-	int score = 0;
-	while (N--) {
-		int t, y, x;
-		cin >> t >> y >> x;
+    move(green); move(blue);
+    score += rem_block(green);
+    score += rem_block(blue);
+    clr_block(green);
+    clr_block(blue);
+  }
 
-		if (t == 1) {
-			score += put1(0, x);
-			score += put1(1, y);
-		}
-		else if (t == 2) {
-			score += put2(0, x, x + 1);
-			score += put3(1, y);
-		}
-		else {
-			score += put3(0, x);
-			score += put2(1, y, y + 1);
-		}
-	}
-	cout << score << '\n';
-	
-	int block = 0;
-	for (int t = 0; t < 2; ++t) {
-		for (int y = 2; y <= 5; ++y) {
-			for (int x = 0; x < 4; ++x) {
-				if (board[t][y][x]) {
-					++block;
-				}
-			}
-		}
-	}
-	cout << block;
-	return 0;
+  int cnt = 0;
+  for (int y = 2; y < 6; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      if (green[y][x]) ++cnt;
+      if (blue[y][x]) ++cnt;
+    }
+  }
+
+  printf("%d\n%d", score, cnt);
+  return 0;
 }
 
-void clearSpecial(int t) {
-	int specialCnt = 0;
-	for (int y = 0; y < 2; ++y) {
-		for (int x = 0; x < 4; ++x) {
-			if (board[t][y][x]) {
-				++specialCnt;
-				break;
-			}
-		}
-	}
-	if (specialCnt == 0) return;
-	for (int y = 5; y >= 2; --y) {
-		for (int x = 0; x < 4; ++x) {
-			board[t][y][x] = board[t][y - specialCnt][x];
-			board[t][y - specialCnt][x] = false;
-		}
-	}
-	for (int y = 0; y < 2; ++y) {
-		for (int x = 0; x < 4; ++x) {
-			board[t][y][x] = false;
-		}
-	}
+void clr_block(bool (*board)[4]) {
+  int cnt = 0;
+  for (int y = 0; y < 2; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      if (board[y][x]) {
+        ++cnt;
+        break;
+      }
+    }
+  }
+  if (cnt == 0) return;
+
+  for (int y = 5; y >= 2; --y) {
+    for (int x = 0; x < 4; ++x) {
+      board[y][x] = board[y - cnt][x];
+    }
+  }
+
+  for (int y = 0; y < 2; ++y) {
+    for (int x = 0; x < 4; ++x) {
+      board[y][x] = false;
+    }
+  }
 }
 
-int deleteBlock(int t) {
-	int clearedY = -1, clearedCnt = 0;
-	for (int y = 5; y >= 2; --y) {
-		if (board[t][y][0] && board[t][y][1] && board[t][y][2] && board[t][y][3]) {
-			board[t][y][0] = board[t][y][1] = board[t][y][2] = board[t][y][3] = false;
-			clearedY = y; ++clearedCnt;
-		}
-	}
-	if (clearedY == -1) return 0;
-	for (int y = clearedY - 1; y >= 0; --y) {
-		for (int x = 0; x < 4; ++x) {
-			board[t][y + clearedCnt][x] = board[t][y][x];
-			board[t][y][x] = false;
-		}
-	}
-	return clearedCnt;
+int rem_block(bool (*board)[4]) {
+  int ret = 0;
+
+  while (true) {
+    bool rem = false;
+
+    for (int y = 5; y >= 2; --y) {
+      bool fill = true;
+      for (int x = 0; x < 4; ++x) {
+        if (!board[y][x]) {
+          fill = false;
+          break;
+        }
+      }
+
+      if (fill) {
+        ++ret; rem = true;
+        for (int yy = y; yy >= 1; --yy) {
+          for (int x = 0; x < 4; ++x) {
+            board[yy][x] = board[yy - 1][x];
+          }
+        }
+        for (int x = 0; x < 4; ++x) {
+          board[0][x] = false;
+        }
+        break;
+      }
+    }
+
+    if (!rem) break;
+  }
+
+  return ret;
 }
 
-int put1(int t, int x) {
-	int y = 1;
-	board[t][y][x] = true;
-	while (y < 5 && !board[t][y + 1][x]) {
-		board[t][y][x] = false;
-		board[t][y + 1][x] = true;
-		++y;
-	}
-	int ret = deleteBlock(t);
-	clearSpecial(t);
-	return ret;
-}
-int put2(int t, int x1, int x2) {
-	int y = 1;
-	board[t][y][x1] = board[t][y][x2] = true;
-	while (y < 5 && !board[t][y + 1][x1] && !board[t][y + 1][x2]) {
-		board[t][y][x1] = board[t][y][x2] = false;
-		board[t][y + 1][x1] = board[t][y + 1][x2] = true;
-		++y;
-	}
-	int ret = deleteBlock(t);
-	clearSpecial(t);
-	return ret;
-}
-int put3(int t, int x) {
-	int y = 1;
-	board[t][y - 1][x] = board[t][y][x] = true;
-	while (y < 5 && !board[t][y + 1][x]) {
-		board[t][y - 1][x] = false;
-		board[t][y + 1][x] = true;
-		++y;
-	}
-	int ret = deleteBlock(t);
-	clearSpecial(t);
-	return ret;
+void move(bool (*board)[4]) {
+  // 블록이 어디까지 이동하는지 확인
+  int y;
+  for (y = 2; y < 6; ++y) {
+    bool check = true;
+    for (int x = 0; x < 4; ++x) {
+      if (board[1][x] && board[y][x]) {
+        check = false;
+        break;
+      }
+    }
+    if (!check) {
+      break;
+    }
+  }
+  --y;
+
+  // 블록 이동
+  if (y >= 2) {
+    for (int x = 0; x < 4; ++x) {
+      board[y][x] |= board[1][x];
+      board[1][x] = false;
+    }
+    for (int x = 0; x < 4; ++x) {
+      board[y - 1][x] |= board[0][x];
+      board[0][x] = false;
+    }
+  }
 }
 ```
 </details>
@@ -3401,8 +3402,6 @@ int put3(int t, int x) {
 1. 파란색 보드를 6행 4열의 보드로 뒤집어서 생각하면, 초록색 보드와 동일한 코드로 작업을 수행할 수 있다.
 
 2. 이러한 복잡한 구현 문제는 절대 한번에 풀지 말고, 출력 함수를 먼저 만든 후, 매 기능을 구현할 때마다 출력을 하며 디버깅해야한다.
-
-3. 블록이 이동할때, 이동하기 전 위치가 모두 덮어질것이라고 생각하고 지워주질 않아 오류가 났다. 이런 가정으로 코드를 빼먹지 말고 꼭 로직을 그대로 코드로 옮겨야 한다.
 ***
 
 ## 19236. 청소년 상어
@@ -3413,8 +3412,7 @@ int put3(int t, int x) {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
 #include <vector>
 #include <algorithm>
 using namespace std;
@@ -3422,135 +3420,115 @@ using namespace std;
 const int dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 }, dx[8] = { 0, -1, -1, -1, 0, 1, 1, 1 };
 
 struct Pos {
+  int y, x;
+};
+
+struct Fish {
   int y, x, d;
   bool eaten;
 };
 
-int f_num;
 struct Info {
-  char board[4][4];
-  Pos fishes[17];
-  int sy, sx, sd;
+  int fishIdx[4][4]; // 0: 먹힘, 1 ~ 16: 물고기 번호
+  Fish fishes[17];
+  Fish shark;
 };
 
-Info info;
-void input();
+int init(Info& info);
 
-int max_sum;
-void dfs(int sum);
-
-void print() {
-  for (int y = 0; y < 4; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      printf("%3d", info.board[y][x]);
-    }
-    printf("\n");
-  }
-}
+int ret = 0;
+vector<Pos> getCands(Info& info);
+void fishMove(Info& info);
+void dfs(Info& info, int sum); // 현재 정보가 info로 주어지고, 지금까지의 물고기 번호 합이 sum일 때, 가능한 모든 경우의 수를 진행한 후 ret 갱신
 
 int main() {
-  input();
-
-  // (0, 0) 물고기 먹기
-  int num = info.board[0][0];
-  info.board[0][0] = 0;
-  info.sy = info.sx = 0;
-  info.sd = info.fishes[num].d;
-  info.fishes[num].eaten = true;
-  // dfs 시작
-  dfs(num);
-
-  printf("%d", max_sum);
-
+  Info info;
+  int sum = init(info);
+  dfs(info, sum);
+  cout << ret;
   return 0;
 }
 
-void move_fish(int num) {
-  Pos& fish = info.fishes[num];
-  int y = fish.y, x = fish.x;
-  for (int i = 0; i < 8; ++i) {
-    int yy = y + dy[fish.d];
-    int xx = x + dx[fish.d];
-    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4 || (yy == info.sy && xx == info.sx)) {
-      fish.d = (fish.d + 1) % 8;
-      continue;
-    }
-    Pos& _fish = info.fishes[info.board[yy][xx]];
-    swap(info.board[y][x], info.board[yy][xx]);
-    fish.y = yy; fish.x = xx;
-    _fish.y = y; _fish.x = x;
-    break;
-  }
-}
+void dfs(Info& info, int sum) {
+  // 1. 물고기 이동
+  fishMove(info);
 
-void dfs(int sum) {
-  max_sum = max(max_sum, sum);
-
-  // dfs 시작 전 info 값 백업
-  //Info ori = info;
-  Info* ori = new Info();
-  memcpy(ori, &info, sizeof(info));
-
-  // 물고기 이동
-  for (int num = 1; num <= 16; ++num) {
-    if (info.fishes[num].eaten) continue;
-    move_fish(num);
-  }
-
-  // 물고기 이동한 상태 백업
-  //Info moved = info;
-  Info* moved = new Info();
-  memcpy(moved, &info, sizeof(info));
-
-  // 먹을 수 있는 물고기 찾기
-  vector<pair<int, int>> cand;
-  for (int i = 1; ; ++i) {
-    int yy = info.sy + dy[info.sd] * i;
-    int xx = info.sx + dx[info.sd] * i;
-    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4) break;
-    if (info.board[yy][xx] != 0) {
-      cand.emplace_back(yy, xx);
-    }
-  }
-
-  // 먹을 수 있는 물고기 없으면 탐색 종료
-  if (cand.empty()) {
-    info = *ori;
-    delete ori;
-    delete moved;
+  // 2. 상어 이동 && 물고기 먹기
+  vector<Pos> cands = getCands(info);
+  if (cands.size() == 0) {
+    ret = max(ret, sum);
     return;
   }
 
-  // 물고기 먹고 재귀호출
-  for (auto& p : cand) {
-    int eaten_num = info.board[p.first][p.second];
-    info.board[p.first][p.second] = 0;
-    Pos& eaten_fish = info.fishes[eaten_num];
-    eaten_fish.eaten = true;
-    info.sy = p.first;
-    info.sx = p.second;
-    info.sd = eaten_fish.d;
-    dfs(sum + eaten_num);
-
-    // info 값 물고기만 이동시킨 상태로 복구
-    info = *moved;
+  for (Pos& pos : cands) {
+    int num = info.fishIdx[pos.y][pos.x];
+    Fish& fish = info.fishes[num];
+    Info nextInfo = info;
+    nextInfo.shark = fish;
+    nextInfo.fishIdx[pos.y][pos.x] = 0;
+    nextInfo.fishes[num].eaten = true;
+    dfs(nextInfo, sum + num);
   }
-
-  // info 값 복구
-  info = *ori;
-  delete ori;
-  delete moved;
 }
 
-void input() {
+void fishMove(Info& info) {
+  for (int num = 1; num <= 16; ++num) {
+    Fish& fish = info.fishes[num];
+    if (fish.eaten) continue;
+    for (int i = 0; i < 8; ++i, fish.d = (fish.d + 1) % 8) {
+      Pos there = { fish.y + dy[fish.d], fish.x + dx[fish.d] };
+      if (there.y < 0 || there.y >= 4 || there.x < 0 || there.x >= 4) continue;
+      if (info.shark.y == there.y && info.shark.x == there.x) continue;
+      if (info.fishIdx[there.y][there.x] == 0) {
+        info.fishIdx[there.y][there.x] = num;
+        info.fishIdx[fish.y][fish.x] = 0;
+        fish.y = there.y; fish.x = there.x;
+        break;
+      }
+      else {
+        int thereNum = info.fishIdx[there.y][there.x];
+        swap(info.fishIdx[there.y][there.x], info.fishIdx[fish.y][fish.x]);
+        swap(info.fishes[thereNum].y, info.fishes[num].y);
+        swap(info.fishes[thereNum].x, info.fishes[num].x);
+        break;
+      }
+    }
+  }
+}
+
+vector<Pos> getCands(Info& info) {
+  vector<Pos> ret;
+  for (int i = 1; i <= 3; ++i) {
+    int yy = info.shark.y + dy[info.shark.d] * i;
+    int xx = info.shark.x + dx[info.shark.d] * i;
+    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4) break;
+    if (info.fishIdx[yy][xx] != 0) {
+      ret.push_back({ yy, xx });
+    }
+  }
+  return ret;
+}
+
+int init(Info& info) {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  int sum = 0;
+
   for (int y = 0; y < 4; ++y) {
     for (int x = 0; x < 4; ++x) {
       int a, b;
-      scanf("%d %d", &a, &b);
-      info.board[y][x] = a;
+      cin >> a >> b;
+      info.fishIdx[y][x] = a;
       info.fishes[a] = { y, x, b - 1, false };
     }
   }
+  info.shark = info.fishes[info.fishIdx[0][0]];
+  info.fishes[info.fishIdx[0][0]].eaten = true;
+  sum += info.fishIdx[0][0];
+  info.fishIdx[0][0] = 0;
+
+  return sum;
 }
 ```
 </details>
@@ -3560,9 +3538,11 @@ void input() {
 
 2. 적절한 print 함수를 만들어서, 한 기능이 완성되면 테스트하여 디버깅하며 구현해야 한다.
 
-3. dfs 함수 내부에서 구조체 원본을 백업해놓을때, 우선적으로는 스택에 할당하되, 구현이 끝나고 나서 힙에 할당하는 방식으로 바꾸면 스택 공간을 절약할 수 있다.
+3. ~~dfs 함수 내부에서 구조체 원본을 백업해놓을때, 우선적으로는 스택에 할당하되, 구현이 끝나고 나서 힙에 할당하는 방식으로 바꾸면 스택 공간을 절약할 수 있다.~~
 
-   new / delete 연산자로 동적 할당 / 메모리 해제 를 할 수 있다.
+   ~~new / delete 연산자로 동적 할당 / 메모리 해제 를 할 수 있다.~~
+
+4. dfs 탐색 최대 깊이 x Info 구조체 크기 만큼만 스택 공간이 할당되므로 힙에 할당까지 안해도 된다.
 
 ***
 
