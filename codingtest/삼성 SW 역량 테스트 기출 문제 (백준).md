@@ -3866,6 +3866,156 @@ void input() {
   }
   sort(guests.begin(), guests.end());
 }
+
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <algorithm>
+#include <cstring>
+using namespace std;
+
+struct Pos {
+  int y, x;
+  bool operator==(const Pos& rhs) const {
+    return y == rhs.y && x == rhs.x;
+  }
+  bool operator<(const Pos& rhs) const {
+    return (y != rhs.y ? y < rhs.y : x < rhs.x);
+  }
+};
+
+struct Customer {
+  Pos to;
+  bool arrived;
+};
+
+const int dy[4] = { -1, 1, 0 , 0 }, dx[4] = { 0, 0, -1, 1 };
+
+int N, M, F;
+bool board[20][20];
+Pos taxi;
+int customerIdx[20][20];
+vector<Customer> customers;
+void init();
+
+int getDist(Pos from, Pos to);
+bool taxiMove();
+
+int main() {
+  init();
+
+  for (int i = 0; i < M; ++i) {
+    if (!taxiMove()) {
+      cout << -1;
+      return 0;
+    }
+  }
+
+  cout << F;
+
+  return 0;
+}
+
+bool taxiMove() {
+  queue<Pos> q;
+  vector<vector<int>> dist(N, vector<int>(N, -1));
+  vector<Pos> cands;
+
+  q.push(taxi);
+  dist[taxi.y][taxi.x] = 0;
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+
+    int cIdx = customerIdx[here.y][here.x];
+    if (cIdx != -1 && !customers[cIdx].arrived) {
+      if (cands.empty() || dist[cands[0].y][cands[0].x] == dist[here.y][here.x]) {
+        cands.push_back(here);
+      }
+      else {
+        break;
+      }
+    }
+
+    for (int d = 0; d < 4; ++d) {
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N) continue;
+      if (board[there.y][there.x] || dist[there.y][there.x] != -1) continue;
+      q.push(there);
+      dist[there.y][there.x] = dist[here.y][here.x] + 1;
+    }
+  }
+
+  if (cands.empty()) return false;
+
+  sort(cands.begin(), cands.end());
+
+  int cIdx = customerIdx[cands[0].y][cands[0].x];
+  Customer& customer = customers[cIdx];
+
+  int toDest = getDist(cands[0], customer.to);
+  if (toDest == -1) return false;
+  int totalDist = dist[cands[0].y][cands[0].x] + toDest;
+
+  if (F >= totalDist) {
+    F -= totalDist;
+    F += 2 * toDest;
+    customer.arrived = true;
+    taxi = customer.to;
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+int getDist(Pos from, Pos to) {
+  queue<Pos> q;
+  vector<vector<int>> dist(N, vector<int>(N, -1));
+  q.push(from);
+  dist[from.y][from.x] = 0;
+
+  while (!q.empty()) {
+    Pos here = q.front(); q.pop();
+    for (int d = 0; d < 4; ++d) {
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N) continue;
+      if (board[there.y][there.x] || dist[there.y][there.x] != -1) continue;
+      if (there == to) {
+        return dist[here.y][here.x] + 1;
+      }
+      dist[there.y][there.x] = dist[here.y][here.x] + 1;
+      q.push(there);
+    }
+  }
+
+  return -1;
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  memset(customerIdx, -1, sizeof(customerIdx));
+
+  cin >> N >> M >> F;
+  for (int i = 0; i < N; ++i) {
+    for (int j = 0; j < N; ++j) {
+      cin >> board[i][j];
+    }
+  }
+  cin >> taxi.y >> taxi.x;
+  --taxi.y; --taxi.x;
+
+  customers = vector<Customer>(M);
+  for (int c = 0; c < M; ++c) {
+    int fromY, fromX, toY, toX;
+    cin >> fromY >> fromX >> toY >> toX;
+    --fromY; --fromX; --toY; --toX;
+    customers[c] = { {toY, toX}, false };
+    customerIdx[fromY][fromX] = c;
+  }
+}
 ```
 </details>
 
@@ -3876,6 +4026,9 @@ void input() {
 
 2. **문제를 푸는 도중도중에 반드시 print 해가며 올바르게 진행중인지 확인해야한다.**
 
+3. 2차원 좌표에서 벽이 있는 경우 막혀서 못가는 경우를 항상 고려해야한다 !!
+
+4. 좌표를 입력받고 미리 y가 커지는 순 -> x가 커지는 순으로 정렬 후 문제를 푸는 방법도 있다.
 ***
 
 ## 20055. 컨베이어 벨트 위의 로봇
