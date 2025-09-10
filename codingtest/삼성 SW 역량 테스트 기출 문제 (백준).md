@@ -4123,104 +4123,97 @@ void input() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
 #include <vector>
+#include <algorithm>
 using namespace std;
 
 const int dy[8] = { -1, -1, 0, 1, 1, 1, 0, -1 }, dx[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
+
 struct Ball {
-  int y, x, m, s, d;
+	int y, x, m, s, d;
 };
-struct Grid {
-  int m_sum, s_sum, b_cnt, dir;
-  bool diff;
+
+struct Info {
+	int m_sum, s_sum, cnt;
+	int d;
+	bool same;
 };
 
 int N, M, K;
 vector<Ball> balls;
-Grid board[50][50];
-void input();
+void init();
 
-void move_ball(int num);
-void update_balls(int y, int x);
+vector<vector<Info>> merged;
+void moveBall(Ball& ball);
 
 int main() {
-  input();
+	init();
 
-  for (int order = 0; order < K; ++order) {
-    // 1. 모든 파이어볼 이동
-    memset(board, 0, sizeof(board));
-    for (int num = 0; num < balls.size(); ++num) {
-      move_ball(num);
-    }
-    // 2. 파이어볼 벡터 갱신
-    balls.clear();
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        update_balls(y, x);
-      }
-    }
-  }
+	for (int order = 0; order < K; ++order) {
+		// 1. 파이어볼 이동
+		merged = vector<vector<Info>>(N, vector<Info>(N, { 0, 0, 0, -1, true }));
+		for (Ball& ball : balls) {
+			moveBall(ball);
+		}
+		// 2. 2개 이상의 파이어볼 합치기
+		vector<Ball> newBalls;
+		for (int y = 0; y < N; ++y) {
+			for (int x = 0; x < N; ++x) {
+				Info& info = merged[y][x];
+				if (info.cnt == 0) continue;
+				else if (info.cnt == 1) {
+					newBalls.push_back({ y, x, info.m_sum, info.s_sum, info.d });
+				}
+				else if (info.m_sum >= 5) {
+					const int newDir[2][4] = { {0, 2, 4, 6}, {1, 3, 5, 7} };
+					for (int i = 0; i < 4; ++i) {
+						newBalls.push_back({ y, x, info.m_sum / 5, info.s_sum / info.cnt, newDir[(info.same ? 0 : 1)][i] });
+					}
+				}
+			}
+		}
+		balls = newBalls;
+	}
 
-  int ret = 0;
-  for (Ball& b : balls) {
-    ret += b.m;
-  }
-  printf("%d", ret);
+	int ret = 0;
+	for (Ball& ball : balls) {
+		ret += ball.m;
+	}
+	cout << ret;
 
-  return 0;
+	return 0;
 }
 
-void update_balls(int y, int x) {
-  Grid& g = board[y][x];
-  if (g.b_cnt == 0) return;
-  if (g.b_cnt == 1) {
-    balls.push_back({ y, x, g.m_sum, g.s_sum, g.dir });
-  }
-  else {
-    int m = g.m_sum / 5;
-    int s = g.s_sum / g.b_cnt;
-    if (m == 0) return;
-    if (g.diff) {
-      for (int d = 1; d <= 7; d += 2) {
-        balls.push_back({ y, x, m, s, d });
-      }
-    }
-    else {
-      for (int d = 0; d <= 6; d += 2) {
-        balls.push_back({ y, x, m, s, d });
-      }
-    }
-  }
+void moveBall(Ball& ball) {
+	int yy = ball.y + dy[ball.d] * (ball.s % N);
+	int xx = ball.x + dx[ball.d] * (ball.s % N);
+	if (yy < 0) yy += N;
+	else if (yy >= N) yy -= N;
+	if (xx < 0) xx += N;
+	else if (xx >= N) xx -= N;
+
+	merged[yy][xx].m_sum += ball.m;
+	merged[yy][xx].s_sum += ball.s;
+	++merged[yy][xx].cnt;
+
+	if (merged[yy][xx].d != -1 && merged[yy][xx].d % 2 != ball.d % 2) {
+		merged[yy][xx].same = false;
+	}
+	merged[yy][xx].d = ball.d;
 }
 
-void move_ball(int num) {
-  Ball& b = balls[num];
-  int yy = b.y + dy[b.d] * b.s, xx = b.x + dx[b.d] * b.s;
-  while (yy < 0) yy += N; while (yy >= N) yy -= N;
-  while (xx < 0) xx += N; while (xx >= N) xx -= N;
-  board[yy][xx].m_sum += b.m;
-  board[yy][xx].s_sum += b.s;
-  ++board[yy][xx].b_cnt;
-  if (board[yy][xx].b_cnt == 1) {
-    board[yy][xx].dir = b.d;
-  }
-  else {
-    if (board[yy][xx].dir % 2 != b.d % 2) {
-      board[yy][xx].diff = true;
-    }
-  }
-}
+void init() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
 
-void input() {
-  scanf("%d %d %d", &N, &M, &K);
-  balls.resize(M);
-  for (int i = 0; i < M; ++i) {
-    scanf("%d %d %d %d %d", &balls[i].y, &balls[i].x, &balls[i].m, &balls[i].s, &balls[i].d);
-    --balls[i].y; --balls[i].x;
-    //balls[i].s %= N;
-  }
+	cin >> N >> M >> K;
+	for (int i = 0; i < M; ++i) {
+		int y, x, m, s, d;
+		cin >> y >> x >> m >> s >> d;
+		--y; --x;
+		balls.push_back({ y, x, m, s, d });
+	}
 }
 ```
 </details>
