@@ -4039,73 +4039,68 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+using namespace std;
 
-int N, K, A[200], zero_cnt;
-bool robot[200];
-void input();
+int N, K, A[200];
+void init();
 
-void rotate();
-void move_robots();
+int zeroCnt = 0;
+bool robots[100];
 
 int main() {
-  input();
+	init();
 
-  for (int turn = 1; ; ++turn) {
-    // 1. 컨베이어 벨트 및 로봇 회전
-    rotate();
-    // 2. 내리는 위치에서 로봇 내리기
-    if (robot[N - 1]) robot[N - 1] = false;
-    // 3. 로봇 움직이기
-    move_robots();
-    // 4. 내리는 위치에서 로봇 내리기
-    if (robot[N - 1]) robot[N - 1] = false;
-    // 5. 로봇 올리기
-    if (A[0] > 0 && !robot[0]) {
-      --A[0];
-      robot[0] = true;
-      if (A[0] == 0) {
-        ++zero_cnt;
-      }
-    }
-    if (zero_cnt >= K) {
-      printf("%d", turn);
-      break;
-    }
-  }
+	for (int turn = 1; ; ++turn) {
+		// 1 - 1. 벨트 회전
+		int tmp = A[2 * N - 1];
+		for (int i = 2 * N - 2; i >= 0; --i) {
+			A[i + 1] = A[i];
+		}
+		A[0] = tmp;
 
-  return 0;
+		// 1 - 2. 로봇 회전
+		for (int i = N - 1; i >= 1; --i) {
+			robots[i] = robots[i - 1];
+		}
+		robots[0] = robots[N - 1] = false;
+
+		// 2. 로봇 이동
+		for (int i = N - 2; i >= 1; --i) {
+			if (robots[i] && !robots[i + 1] && A[i + 1]) {
+				robots[i] = false;
+				robots[i + 1] = true;
+				--A[i + 1];
+				if (A[i + 1] == 0) ++zeroCnt;
+			}
+		}
+		robots[N - 1] = false;
+
+		// 3. 로봇 올리기
+		if (A[0]) {
+			robots[0] = true;
+			--A[0];
+			if (A[0] == 0) ++zeroCnt;
+		}
+
+		// 4. 내구도 0인 칸 K개 이상인지 확인
+		if (zeroCnt >= K) {
+			cout << turn;
+			return 0;
+		}
+	}
+
+	return 0;
 }
 
-void move_robots() {
-  for (int r = N - 2; r >= 0; --r) {
-    if (robot[r] && !robot[r + 1] && A[r + 1] >= 1) {
-      robot[r] = false;
-      robot[r + 1] = true;
-      --A[r + 1];
-      if (A[r + 1] == 0) ++zero_cnt;
-    }
-  }
-}
+void init() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
 
-void rotate() {
-  int tmp = A[2 * N - 1];
-  for (int i = 2 * N - 1; i >= 1; --i) {
-    A[i] = A[i - 1];
-  }
-  A[0] = tmp;
-
-  for (int i = N - 1; i >= 1; --i) {
-    robot[i] = robot[i - 1];
-  }
-  robot[0] = false;
-}
-
-void input() {
-  scanf("%d %d", &N, &K);
-  for (int i = 0; i < 2 * N; ++i) {
-    scanf("%d", &A[i]);
-  }
+	cin >> N >> K;
+	for (int i = 0; i < 2 * N; ++i) {
+		cin >> A[i];
+	}
 }
 ```
 </details>
