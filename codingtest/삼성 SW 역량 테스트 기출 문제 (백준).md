@@ -4230,100 +4230,104 @@ MOD 연산을 사용할 때에는 항상 주의해야 한다.
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+using namespace std;
 
 struct Pos {
   int y, x;
 };
-int N, A[499][499], dir[3] = { 3, 0, 1 }; // d_r, dir, d_l
-Pos from, to, to2;
-void input();
 
 const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { -1, 0, 1, 0 };
-const int d_num[9][3] = { // d_r, dir, d_l
-  {1, 0, 0}, {1, 1, 0}, {2, 1, 0}, {1, 2, 0}, {0, 3, 0}, {0, 0, 1}, {0, 1, 1}, {0, 2, 1}, {0, 1, 2}
-};
-const int per[9] = { 1, 7, 2, 10, 5, 1, 7, 10, 2 };
 
-int out;
-void blow(int len);
+int N, A[500][500];
+void init();
+
+int sand = 0;
+void tornado(Pos pos, int d, int len);
+void blow(Pos from, int d);
 
 int main() {
-  input();
+  init();
 
-  for (int len = 1; ; ++len) {
-    blow(len);
-    for (int i = 0; i < 3; ++i) {
-      dir[i] = (dir[i] + 1) % 4;
-    }
-
-    blow(len);
-    for (int i = 0; i < 3; ++i) {
-      dir[i] = (dir[i] + 1) % 4;
-    }
-
-    if (len == N - 1) {
-      blow(len);
-      break;
-    }
+  int y = N / 2, x = N / 2;
+  for (int len = 1; len < N; len += 2) {
+    tornado({ y, x }, 0, len);
+    x -= len;
+    tornado({ y, x }, 1, len);
+    y += len;
+    tornado({ y, x }, 2, len + 1);
+    x += len + 1;
+    tornado({ y, x }, 3, len + 1);
+    y -= len + 1;
   }
+  tornado({ y, x }, 0, N - 1);
 
-  printf("%d", out);
+  cout << sand;
 
   return 0;
 }
 
-void blow(int len) {
-  if (len == 0) return;
+const int delta[9][3] = { // {left, center, right}
+  {1, 0, 0}, {1, 1, 0}, {1, 2, 0}, {2, 1, 0}, {0, 3, 0}, {0, 0, 1}, {0, 1, 1}, {0, 2, 1}, {0, 1, 2}
+};
+const int per[9] = { 1, 7, 10, 2, 5, 1, 7, 10, 2 };
 
-  to = { from.y + dy[dir[1]], from.x + dx[dir[1]] };
-  to2 = { to.y + dy[dir[1]], to.x + dx[dir[1]] };
-
+void blow(Pos from, int d) {
+  int dl = (d + 1) % 4, dr = (d + 3) % 4;
   int sum = 0;
+  Pos to = { from.y + dy[d], from.x + dx[d] };
+
   for (int i = 0; i < 9; ++i) {
-    int yy = from.y, xx = from.x;
-    for (int j = 0; j < 3; ++j) {
-      yy += dy[dir[j]] * d_num[i][j];
-      xx += dx[dir[j]] * d_num[i][j];
-    }
-    int sand = A[to.y][to.x] * per[i] / 100;
-    sum += sand;
-    if (yy < 0 || yy >= N || xx < 0 || xx >= N) {
-      out += sand;
+    Pos there;
+    there.y = { from.y + dy[dl] * delta[i][0] + dy[d] * delta[i][1] + dy[dr] * delta[i][2] };
+    there.x = { from.x + dx[dl] * delta[i][0] + dx[d] * delta[i][1] + dx[dr] * delta[i][2] };
+    int s = A[to.y][to.x] * per[i] / 100;
+    if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N) {
+      sand += s;
     }
     else {
-      A[yy][xx] += sand;
+      A[there.y][there.x] += s;
     }
+    sum += s;
   }
-  A[to.y][to.x] -= sum;
-
-  if (to2.y < 0 || to2.y >= N || to2.x < 0 || to2.x >= N) {
-    out += A[to.y][to.x];
+  Pos a = { from.y + dy[d] * 2, from.x + dx[d] * 2 };
+  if (a.y < 0 || a.y >= N || a.x < 0 || a.x >= N) {
+    sand += A[to.y][to.x] - sum;
   }
   else {
-    A[to2.y][to2.x] += A[to.y][to.x];
+    A[a.y][a.x] += A[to.y][to.x] - sum;
   }
+
   A[to.y][to.x] = 0;
-
-  from = to;
-
-  blow(len - 1);
 }
 
-void input() {
-  scanf("%d", &N);
+void tornado(Pos pos, int d, int len) {
+  for (int i = 0; i < len; ++i) {
+    blow(pos, d);
+    pos.y += dy[d]; pos.x += dx[d];
+  }
+}
+
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
-      scanf("%d", &A[i][j]);
+      cin >> A[i][j];
     }
   }
-  from = { N / 2, N / 2 };
 }
 ```
 </details>
 
 ### 설명
 2차원 배열 위에서 특정 방향으로의 점 이동을 연습할 수 있는 문제
+
+d 와 dy[] dx[] 의 관계를 잘 생각하자.
+
+d의 값에는 방향이 정해지고, 그 방향에 맞게 y변화량 및 x변화량을 y[d] 와 dx[d] 에 넣어주는 것이다.
 
 ***
 
