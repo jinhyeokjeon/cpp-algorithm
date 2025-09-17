@@ -4472,7 +4472,7 @@ struct와 전역변수를 적절히 사용하면 간단하게 코드를 작성�
 
 ***
 
-## 상어 초등학교
+## 21608. 상어 초등학교
 > https://www.acmicpc.net/problem/21608
 
 ### 코드
@@ -4480,116 +4480,116 @@ struct와 전역변수를 적절히 사용하면 간단하게 코드를 작성�
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-
+struct Pos { int y, x; };
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
-struct Info {
-  int num, like[4], y, x;
-  bool is_liked(int f_num) {
-    for (int i = 0; i < 4; ++i) {
-      if (like[i] == f_num) return true;
-    }
-    return false;
-  }
-};
 
-int N, student_num[20][20], like_cnt[20][20], max_like_cnt, empty_cnt[20][20], max_empty_cnt;
-Info students[400];
-void input();
+int N, like[401][4], board[20][20];
+vector<int> order;
+void init();
 
-void calc1(Info& s, int y, int x);
+void sit(int num);
 
 int main() {
-  input();
-  for (Info& s : students) {
-    // 1. 각 위치의 좋아하는 인접 학생 수와, 가장 큰 좋아하는 인접 학생 수 구하기
-    max_like_cnt = 0;
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        if (student_num[y][x] != 0) continue;
-        calc1(s, y, x);
-      }
-    }
-    // 2. 가장 큰 좋아하는 인접 학생 수를 가진 칸들 중에서, 가장 큰 인접 빈 칸 개수 구하기
-    max_empty_cnt = 0;
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        if (student_num[y][x] != 0 || like_cnt[y][x] != max_like_cnt) continue;
-        max_empty_cnt = max(max_empty_cnt, empty_cnt[y][x]);
-      }
-    }
-    // 3. 행 커지는 방향, 열 커지는 방향으로 탐색하면서 조건 만족하는 자리 찾아서 학생 앉히기.
-    bool put = false;
-    for (int y = 0; y < N; ++y) {
-      for (int x = 0; x < N; ++x) {
-        if (student_num[y][x] != 0) continue;
-        if (like_cnt[y][x] == max_like_cnt && empty_cnt[y][x] == max_empty_cnt) {
-          student_num[y][x] = s.num;
-          put = true;
-          for (int d = 0; d < 4; ++d) {
-            int yy = y + dy[d], xx = x + dx[d];
-            if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-            --empty_cnt[yy][xx];
+  init();
+
+  for (int turn = 0; turn < N * N; ++turn) {
+    sit(order[turn]);
+  }
+
+  int sum = 0;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      int num = board[y][x];
+      int cnt = 0;
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+        for (int i = 0; i < 4; ++i) {
+          if (board[yy][xx] == like[num][i]) {
+            ++cnt;
+            break;
           }
-          s.y = y; s.x = x;
-          break;
         }
       }
-      if (put) break;
+      if (cnt == 1) sum += 1;
+      else if (cnt == 2) sum += 10;
+      else if (cnt == 3) sum += 100;
+      else if (cnt == 4) sum += 1000;
     }
   }
 
-  // 만족도 계산
-  int sum = 0;
-  for (Info& s : students) {
-    int cnt = 0;
-    for (int d = 0; d < 4; ++d) {
-      int yy = s.y + dy[d], xx = s.x + dx[d];
-      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-      if (s.is_liked(student_num[yy][xx])) ++cnt;
-    }
-    if (cnt == 1) sum += 1;
-    else if (cnt == 2) sum += 10;
-    else if (cnt == 3) sum += 100;
-    else if (cnt == 4) sum += 1000;
-  }
-  printf("%d", sum);
+  cout << sum;
 
   return 0;
 }
 
-void calc1(Info& s, int y, int x) {
-  int cnt = 0;
-  for (int d = 0; d < 4; ++d) {
-    int yy = y + dy[d], xx = x + dx[d];
-    if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-    if (student_num[yy][xx] != 0 && s.is_liked(student_num[yy][xx])) {
-      ++cnt;
+void sit(int num) {
+  // 1. 비어있는 칸 중에서 좋아하는 학생이 인접한 칸에 가장 많은 칸 개수 구하기
+  int fav_cnt[20][20] = { 0, };
+  int max_fav_cnt = 0;
+
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (board[y][x]) continue;
+      int cnt = 0;
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+        if (board[yy][xx] == 0) continue;
+        for (int i = 0; i < 4; ++i) {
+          if (like[num][i] == board[yy][xx]) {
+            ++cnt;
+            break;
+          }
+        }
+      }
+      fav_cnt[y][x] = cnt;
+      max_fav_cnt = max(max_fav_cnt, cnt);
     }
   }
-  like_cnt[y][x] = cnt;
-  max_like_cnt = max(max_like_cnt, cnt);
+
+  // 2. 인접 좋아하는 학생 수가 max_fav_cnt 인 칸들 중에서 인접 비어있는 칸 제일 큰 수 찾기
+  int emp_cnt[20][20] = { 0, };
+  int max_emp_cnt = 0;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (board[y][x] || fav_cnt[y][x] != max_fav_cnt) continue;
+      int cnt = 0;
+      for (int d = 0; d < 4; ++d) {
+        int yy = y + dy[d], xx = x + dx[d];
+        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
+        if (board[yy][xx] == 0) ++cnt;
+      }
+      emp_cnt[y][x] = cnt;
+      max_emp_cnt = max(max_emp_cnt, cnt);
+    }
+  }
+
+  // 3. fav_cnt[y][x] == max_fav_cnt && emp_cnt[y][x] == max_emp_cnt 인 y, x 찾아서 집어 넣고 반환
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < N; ++x) {
+      if (board[y][x] == 0 && fav_cnt[y][x] == max_fav_cnt && emp_cnt[y][x] == max_emp_cnt) {
+        board[y][x] = num;
+        return;
+      }
+    }
+  }
 }
 
-void input() {
-  scanf("%d", &N);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+  cin >> N;
   for (int i = 0; i < N * N; ++i) {
-    Info& s = students[i];
-    scanf("%d", &s.num);
+    int num; cin >> num;
+    order.push_back(num);
     for (int j = 0; j < 4; ++j) {
-      scanf("%d", &s.like[j]);
-    }
-  }
-  empty_cnt[0][0] = empty_cnt[0][N - 1] = empty_cnt[N - 1][0] = empty_cnt[N - 1][N - 1] = 2;
-  for (int i = 1; i < N - 1; ++i) {
-    empty_cnt[0][i] = empty_cnt[N - 1][i] = empty_cnt[i][0] = empty_cnt[i][N - 1] = 3;
-  }
-  for (int i = 1; i < N - 1; ++i) {
-    for (int j = 1; j < N - 1; ++j) {
-      empty_cnt[i][j] = 4;
+      cin >> like[num][j];
     }
   }
 }
@@ -4597,8 +4597,16 @@ void input() {
 </details>
 
 ### 설명
-구현 문제.
-struct 및, 구조체 함수를 사용하면 간단하게 구현할 수 있다.
+
+조건 A B C 가 있다.
+
+A를 만족하고, 그것이 여러개일 때 B를 만족하고, 그것이 여러개일 때 C를 만족하는 것을 찾아야 한다.
+
+1. A를 만족하는 값을 찾고, 
+
+2. A를 만족하는 값과 같은 위치 중에서 B를 만족하는 값을 찾고,
+
+3. C를 만족하는 순서대로 A를 만족하는 값과 B를 만족하는 값을 갖는 위치를 발견하면 반환하면 된다.
 
 ***
 
