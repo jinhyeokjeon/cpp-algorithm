@@ -4339,126 +4339,127 @@ d의 값에는 방향이 정해지고, 그 방향에 맞게 y변화량 및 x변�
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
 #include <cstring>
 #include <queue>
 #include <algorithm>
 using namespace std;
 
-struct Pos {
-  int y, x;
-};
+struct Pos { int y, x; };
 
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
-int N, Q, L, A[64][64];
-void input();
 
-int tmp[64][64];
-void firestorm();
-void rotate(int y, int x);
+int N, Q, L, A[64][64], tmp[64][64];
+void init();
+
+void rotate(int y, int x, int l);
+void checkIce(int y, int x);
 
 bool discovered[64][64];
-int bfs(int y, int x);
+int getNum(int y, int x);
 
 int main() {
-  input();
+  init();
   while (Q--) {
-    scanf("%d", &L);
-    L = (1 << L);
-    // 파이어스톰 시전
-    firestorm();
-  }
+    cin >> L;
 
-  // 얼음 합 출력
-  int sum = 0;
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      sum += A[y][x];
-    }
-  }
-  printf("%d\n", sum);
-
-  // 덩어리가 차지하는 칸 계산
-  int max_cnt = 0;
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      if (!discovered[y][x] && A[y][x] > 0) {
-        max_cnt = max(max_cnt, bfs(y, x));
+    // 1. 부분 격자 시계 방향 90도 회전
+    for (int y = 0; y < (1 << N); y += (1 << L)) {
+      for (int x = 0; x < (1 << N); x += (1 << L)) {
+        rotate(y, x, (1 << L));
       }
     }
-  }
-  printf("%d", max_cnt);
 
-  return 0;
+    // 2. 인접한 얼음이 있는 칸 2개 이하인 얼음 1개 줄이기.
+    for (int y = 0; y < (1 << N); ++y) {
+      for (int x = 0; x < (1 << N); ++x) {
+        checkIce(y, x);
+      }
+    }
+    memcpy(A, tmp, sizeof(A));
+  }
+
+  // A[r][c]의 합 구하기
+  int sum = 0;
+  for (int i = 0; i < (1 << N); ++i) {
+    for (int j = 0; j < (1 << N); ++j) {
+      sum += A[i][j];
+    }
+  }
+  cout << sum << '\n';
+
+  int biggest = 1;
+  // 가장 큰 덩어리가 차지하는 칸의 개수 출력
+  for (int y = 0; y < (1 << N); ++y) {
+    for (int x = 0; x < (1 << N); ++x) {
+      if (discovered[y][x] || A[y][x] == 0) continue;
+      biggest = max(biggest, getNum(y, x));
+    }
+  }
+  cout << (biggest > 1 ? biggest : 0);
 }
 
-int bfs(int y, int x) {
-  int cnt = 0;
+int getNum(int y, int x) {
   queue<Pos> q;
-
-  discovered[y][x] = true;
   q.push({ y, x });
+  discovered[y][x] = true;
+  int ret = 0;
 
   while (!q.empty()) {
     Pos here = q.front(); q.pop();
-    ++cnt;
+    ++ret;
     for (int d = 0; d < 4; ++d) {
-      int yy = here.y + dy[d], xx = here.x + dx[d];
-      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-      if (discovered[yy][xx] || A[yy][xx] == 0) continue;
-      discovered[yy][xx] = true;
-      q.push({ yy, xx });
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= (1 << N) || there.x < 0 || there.x >= (1 << N)) continue;
+      if (discovered[there.y][there.x] || A[there.y][there.x] == 0) continue;
+      discovered[there.y][there.x] = true;
+      q.push(there);
     }
   }
 
-  return cnt;
+  return ret;
 }
 
-void firestorm() {
-  // 시계방향 90도 회전
-  for (int y = 0; y < N; y += L) {
-    for (int x = 0; x < N; x += L) {
-      rotate(y, x);
-    }
+void checkIce(int y, int x) {
+  if (A[y][x] == 0) {
+    tmp[y][x] = 0;
+    return;
   }
-  memcpy(A, tmp, sizeof(A));
-
-  // 얼음 양 조절
-  memset(tmp, 0, sizeof(tmp));
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      if (A[y][x] == 0) continue;
-      int cnt = 0;
-      for (int d = 0; d < 4; ++d) {
-        int yy = y + dy[d], xx = x + dx[d];
-        if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-        if (A[yy][xx] > 0) ++cnt;
-      }
-      if (cnt < 3) {
-        tmp[y][x] = A[y][x] - 1;
-      }
-      else {
-        tmp[y][x] = A[y][x];
-      }
-    }
+  int cnt = 0;
+  for (int d = 0; d < 4; ++d) {
+    int yy = y + dy[d], xx = x + dx[d];
+    if (yy < 0 || yy >= (1 << N) || xx < 0 || xx >= (1 << N)) continue;
+    if (A[yy][xx] >= 1) ++cnt;
   }
-  memcpy(A, tmp, sizeof(A));
+  if (cnt <= 2) {
+    tmp[y][x] = A[y][x] - 1;
+  }
+  else {
+    tmp[y][x] = A[y][x];
+  }
 }
 
-void rotate(int y, int x) {
-  for (int yy = 0; yy < L; ++yy) {
-    for (int xx = 0; xx < L; ++xx) {
-      tmp[y + xx][x + L - 1 - yy] = A[y + yy][x + xx];
+void rotate(int y, int x, int l) {
+  for (int i = 0; i < l; ++i) {
+    for (int j = 0; j < l; ++j) {
+      tmp[y + j][x + l - 1 - i] = A[y + i][x + j];
+    }
+  }
+  for (int i = 0; i < l; ++i) {
+    for (int j = 0; j < l; ++j) {
+      A[y + i][x + j] = tmp[y + i][x + j];
     }
   }
 }
 
-void input() {
-  scanf("%d %d", &N, &Q);
-  N = (1 << N);
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < N; ++j) {
-      scanf("%d", &A[i][j]);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> Q;
+  for (int i = 0; i < (1 << N); ++i) {
+    for (int j = 0; j < (1 << N); ++j) {
+      cin >> A[i][j];
     }
   }
 }
