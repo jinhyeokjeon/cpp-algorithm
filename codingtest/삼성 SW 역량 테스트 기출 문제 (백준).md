@@ -4618,164 +4618,157 @@ A를 만족하고, 그것이 여러개일 때 B를 만족하고, 그것이 여�
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
-#include <queue>
+#include <iostream>
 #include <vector>
+#include <queue>
 #include <algorithm>
+#include <cstring>
 using namespace std;
 
-struct Pos {
-  int y, x;
-};
+struct Pos { int y, x; };
+
 const int dy[4] = { -1, 1, 0, 0 }, dx[4] = { 0, 0, -1, 1 };
 
-int N, M, board[20][20], tmp[20][20], score;
-void input();
+int N, M, color[20][20], tmp[20][20];
+void init();
 
-vector<vector<Pos>> groups;
+vector<vector<Pos>> blockGroups;
+vector<int> rainbowCnt;
+vector<vector<bool>> discovered; // 외부에서 사용.
 
-bool discovered1[20][20]; // 전체 bfs 에서의 방문 여부 체크
-bool discovered2[20][20]; // 이번 bfs 에서의 방문 여부 체크
-void find_group();
-void bfs(int y, int x);
+void findGroup(int y, int x);
 
-void erase_group();
+int eraseBlocks();
+
 void gravity();
+
 void rotate();
 
-void print(const char* str) {
-  printf("\n%s\n", str);
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      printf("%3d", board[y][x]);
-    }
-    printf("\n");
-  }
-}
-
 int main() {
-  input();
+  init();
+
+  int score = 0;
 
   while (true) {
     // 1. 블록 그룹 찾기
-    groups.clear();
-    find_group();
-    // 2. 그룹이 없으면 종료
-    if (groups.empty()) break;
-    // 3. 조건에 맞는 그룹 제거
-    erase_group();
-    // 4. 중력 작용
+    blockGroups.clear();
+    rainbowCnt.clear();
+    discovered = vector<vector<bool>>(N, vector<bool>(N, false));
+    for (int y = 0; y < N; ++y) {
+      for (int x = 0; x < N; ++x) {
+        if (color[y][x] <= 0 || discovered[y][x]) continue;
+        findGroup(y, x);
+      }
+    }
+    if (blockGroups.empty()) break;
+
+    // 2. 블록 제거
+    score += eraseBlocks();
+
+    // 3. 중력 작용
     gravity();
-    // 5. 격자 반시계 회전
+
+    // 4. 90도 반시계 회전
     rotate();
-    // 6. 중력 작용
+
+    // 5. 중력 작용
     gravity();
   }
-  printf("%d", score);
+
+  cout << score;
+
   return 0;
+}
+
+int eraseBlocks() {
+  // 가장 큰 블록 그룹의 크기 구하기
+  int maxSize = 0;
+  for (auto& group : blockGroups) {
+    maxSize = max<int>(maxSize, group.size());
+  }
+  // maxSize 인 그룹중에서 가장 많은 무지개 블록 수 구하기
+  int maxRainbowCnt = 0;
+  for (int i = 0; i < rainbowCnt.size(); ++i) {
+    if (blockGroups[i].size() == maxSize) {
+      maxRainbowCnt = max(maxRainbowCnt, rainbowCnt[i]);
+    }
+  }
+  // maxSize && maxRainbowCnt 인 블록 찾아서 지우고 반환
+  for (int i = blockGroups.size() - 1; i >= 0; --i) {
+    if (blockGroups[i].size() == maxSize && rainbowCnt[i] == maxRainbowCnt) {
+      int ret = blockGroups[i].size() * blockGroups[i].size();
+      for (Pos& pos : blockGroups[i]) {
+        color[pos.y][pos.x] = -2;
+      }
+      return ret;
+    }
+  }
+  return -1;
 }
 
 void rotate() {
   for (int y = 0; y < N; ++y) {
     for (int x = 0; x < N; ++x) {
-      tmp[N - 1 - x][y] = board[y][x];
+      tmp[N - 1 - x][y] = color[y][x];
     }
   }
-  memcpy(board, tmp, sizeof(board));
+  memcpy(color, tmp, sizeof(color));
 }
 
 void gravity() {
   for (int x = 0; x < N; ++x) {
-    int btm = N - 1;
-    while (btm >= 0 && board[btm][x] != -2) --btm;
-    for (int y = btm - 1; y >= 0; --y) {
-      if (board[y][x] == -2) continue;
-      if (board[y][x] >= 0) {
-        board[btm--][x] = board[y][x];
-        board[y][x] = -2;
+    int btm = N;
+    for (int y = N - 1; y >= 0; --y) {
+      if (color[y][x] == -2) continue;
+      else if (color[y][x] == -1) {
+        btm = y; continue;
       }
       else {
-        btm = y - 1;
-        while (btm >= 0 && board[btm][x] != -2) --btm;
-        y = btm;
+        int c = color[y][x];
+        color[y][x] = -2;
+        color[--btm][x] = c;
       }
     }
   }
 }
 
-void erase_group() {
-  int max_group_size = 0;
-  for (auto& v : groups) {
-    max_group_size = max<int>(max_group_size, v.size());
-  }
-
-  vector<int> rbw_cnt(groups.size(), 0);
-  int max_rbw_cnt = 0;
-  for (int i = 0; i < groups.size(); ++i) {
-    auto& v = groups[i];
-    if (v.size() != max_group_size) continue; // 그룹의 크기가 max_group_size 인 그룹들로만 max_rbw_cnt 를 찾아야한다!!!!
-    for (auto& p : v) {
-      if (board[p.y][p.x] == 0) {
-        ++rbw_cnt[i];
-      }
-    }
-    max_rbw_cnt = max(max_rbw_cnt, rbw_cnt[i]);
-  }
-
-  for (int i = groups.size() - 1; i >= 0; --i) {
-    if (groups[i].size() == max_group_size && rbw_cnt[i] == max_rbw_cnt) {
-      for (auto& p : groups[i]) {
-        board[p.y][p.x] = -2;
-      }
-      score += groups[i].size() * groups[i].size();
-      return;
-    }
-  }
-}
-
-void find_group() {
-  memset(discovered1, false, sizeof(discovered1));
-  for (int y = 0; y < N; ++y) {
-    for (int x = 0; x < N; ++x) {
-      if (!discovered1[y][x] && board[y][x] >= 1) {
-        memset(discovered2, false, sizeof(discovered2));
-        bfs(y, x);
-      }
-    }
-  }
-}
-
-void bfs(int y, int x) {
+void findGroup(int y, int x) {
+  blockGroups.emplace_back();
+  rainbowCnt.push_back(0);
+  vector<vector<bool>> discovered2(N, vector<bool>(N, false));
   queue<Pos> q;
-  vector<Pos> v;
-  int color = board[y][x];
-
-  discovered1[y][x] = discovered2[y][x] = true;
+  discovered[y][x] = discovered2[y][x] = true;
   q.push({ y, x });
-
   while (!q.empty()) {
     Pos here = q.front(); q.pop();
-    v.push_back(here);
+    blockGroups.back().push_back(here);
     for (int d = 0; d < 4; ++d) {
-      int yy = here.y + dy[d], xx = here.x + dx[d];
-      if (yy < 0 || yy >= N || xx < 0 || xx >= N) continue;
-      if (board[yy][xx] == -1 || board[yy][xx] == -2) continue;
-      if (board[yy][xx] >= 1 && (discovered1[yy][xx] || board[yy][xx] != color)) continue;
-      if (board[yy][xx] == 0 && discovered2[yy][xx]) continue;
-      discovered1[yy][xx] = discovered2[yy][xx] = true;
-      q.push({ yy, xx });
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= N) continue;
+      if (discovered2[there.y][there.x] || color[there.y][there.x] <= -1) continue;
+      if (color[there.y][there.x] == 0 || color[there.y][there.x] == color[y][x]) {
+        if (color[there.y][there.x] == 0) {
+          ++rainbowCnt.back();
+        }
+        discovered[there.y][there.x] = discovered2[there.y][there.x] = true;
+        q.push(there);
+      }
     }
   }
-
-  if (v.size() >= 2) groups.push_back(v);
+  if (blockGroups.back().size() == 1) {
+    blockGroups.pop_back();
+    rainbowCnt.pop_back();
+  }
 }
 
-void input() {
-  scanf("%d %d", &N, &M);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> M;
   for (int i = 0; i < N; ++i) {
     for (int j = 0; j < N; ++j) {
-      scanf("%d", &board[i][j]);
+      cin >> color[i][j];
     }
   }
 }
@@ -4788,6 +4781,8 @@ void input() {
 간단하게 풀기 위해서 그룹의 최대 크기를 구한 후, 최대 크기를 갖는 그룹들 중에서 최대 무지개 블록 수를 구한 후, 기준 블록이 우측 하단에 있는 그룹부터 차례로 순회하며 그룹의 크기가 앞에서 구한 최대 크기이고, 무지개 블록의 개수가 앞에서 구한 최대 무지개 블록 개수인 그룹을 찾으면 된다.
 
 이때 최대 무지개 블록 수는 **최대 그룹 크기** 인 그룹들 중에서 구해야 한다는 것을 주의해야 한다.
+
+**중력 작용** 하는 코드도 자주 나오므로 익혀두면 좋다.
 
 ***
 
