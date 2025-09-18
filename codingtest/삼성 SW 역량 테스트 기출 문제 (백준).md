@@ -5278,37 +5278,46 @@ enum 을 사용하면 헷갈리지 않고 코드를 작성할 수 있다.
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
+#include <iostream>
+#include <vector>
+#include <queue>
 #include <cstring>
-
-void print(const char* str);
+using namespace std;
 
 struct Pos { int y, x; };
-const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { 1, 0, -1, 0 }; // 오, 아래, 왼, 위
+const int dy[4] = { 0, -1, 0, 1 }, dx[4] = { 1, 0, -1, 0 };
 
-int R, C, K, W, board[20][20], heat[20][20], tmp[20][20];
+int R, C, K, W;
+int board[20][20];
+int temp[20][20];
 bool wall[20][20][20][20];
-Pos check_list[400]; int check_num;
-void input();
-bool range(int y, int x);
-void set_heater(int y, int x, int d);
+vector<Pos> invest;
+void init();
 
-void adjust();
-bool inspect();
+int tmp[20][20];
+void adjust(int y, int x);
 
 int main() {
-  input();
+  init();
 
   for (int cho = 1; cho <= 100; ++cho) {
-    // 1. 온풍기에서 바람 나옴
+    // 1. 온풍기에서 바람 나오기
     for (int y = 0; y < R; ++y) {
       for (int x = 0; x < C; ++x) {
-        board[y][x] += heat[y][x];
+        board[y][x] += temp[y][x];
       }
     }
+
     // 2. 온도 조절
-    adjust();
-    // 3. 가장 바깥쪽 1 감소
+    memcpy(tmp, board, sizeof(board));
+    for (int y = 0; y < R; ++y) {
+      for (int x = 0; x < C; ++x) {
+        adjust(y, x);
+      }
+    }
+    memcpy(board, tmp, sizeof(board));
+
+    // 3. 가장 바깥쪽 칸의 온도 검사
     for (int y = 0; y < R; ++y) {
       if (board[y][0] >= 1) --board[y][0];
       if (board[y][C - 1] >= 1) --board[y][C - 1];
@@ -5317,123 +5326,125 @@ int main() {
       if (board[0][x] >= 1) --board[0][x];
       if (board[R - 1][x] >= 1) --board[R - 1][x];
     }
-    // 4. 검사
-    if (inspect()) {
-      printf("%d", cho);
+
+    // 4. 모든 칸의 온도가 K 이상인지 검사
+    bool check = true;
+    for (Pos& pos : invest) {
+      if (board[pos.y][pos.x] < K) {
+        check = false;
+        break;
+      }
+    }
+    if (check) {
+      cout << cho;
       return 0;
     }
   }
-  printf("101");
+
+  cout << 101;
   return 0;
 }
 
-bool inspect() {
-  for (int i = 0; i < check_num; ++i) {
-    Pos& p = check_list[i];
-    if (board[p.y][p.x] < K) {
-      return false;
+void adjust(int y, int x) {
+  if (board[y][x] == 0) return;
+
+  for (int d = 0; d < 4; ++d) {
+    int yy = y + dy[d], xx = x + dx[d];
+    if (yy < 0 || yy >= R || xx < 0 || xx >= C || wall[y][x][yy][xx]) continue;
+    if (board[y][x] > board[yy][xx]) {
+      int gap = (board[y][x] - board[yy][xx]) / 4;
+      tmp[y][x] -= gap;
+      tmp[yy][xx] += gap;
     }
   }
-  return true;
 }
 
-void adjust() {
-  memset(tmp, 0, sizeof(tmp));
-  for (int y = 0; y < R; ++y) {
-    for (int x = 0; x < C; ++x) {
-      tmp[y][x] += board[y][x];
-      for (int d = 0; d < 4; ++d) {
-        int yy = y + dy[d], xx = x + dx[d];
-        if (!range(yy, xx) || wall[y][x][yy][xx] || board[yy][xx] >= board[y][x]) continue;
-        int val = (board[y][x] - board[yy][xx]) / 4;
-        tmp[y][x] -= val;
-        tmp[yy][xx] += val;
+void calcTemp(Pos from, int d) {
+  from = { from.y + dy[d], from.x + dx[d] };
+
+  int ld = (d + 1) % 4, rd = (d + 3) % 4;
+  vector<vector<bool>> discovered(R, vector<bool>(C, false));
+  queue<pair<Pos, int>> q;
+
+  q.push({ from, 5 });
+  while (!q.empty()) {
+    Pos here = q.front().first;
+    int t = q.front().second;
+    q.pop();
+    temp[here.y][here.x] += t;
+
+    if (t == 1) continue;
+
+    // 1. d
+    {
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (0 <= there.y && there.y < R && 0 <= there.x && there.x < C && !discovered[there.y][there.x]) {
+        if (!wall[here.y][here.x][there.y][there.x]) {
+          discovered[there.y][there.x] = true;
+          q.push({ there, t - 1 });
+        }
+      }
+    }
+    // 2. ld -> d
+    {
+      Pos there1 = { here.y + dy[ld], here.x + dx[ld] };
+      Pos there2 = { there1.y + dy[d], there1.x + dx[d] };
+      if (0 <= there1.y && there1.y < R && 0 <= there1.x && there1.x < C) {
+        if (0 <= there2.y && there2.y < R && 0 <= there2.x && there2.x < C && !discovered[there2.y][there2.x]) {
+          if (!wall[here.y][here.x][there1.y][there1.x] && !wall[there1.y][there1.x][there2.y][there2.x]) {
+            discovered[there2.y][there2.x] = true;
+            q.push({ there2, t - 1 });
+          }
+        }
+      }
+    }
+    // 3. rd -> d
+    {
+      Pos there1 = { here.y + dy[rd], here.x + dx[rd] };
+      Pos there2 = { there1.y + dy[d], there1.x + dx[d] };
+      if (0 <= there1.y && there1.y < R && 0 <= there1.x && there1.x < C) {
+        if (0 <= there2.y && there2.y < R && 0 <= there2.x && there2.x < C && !discovered[there2.y][there2.x]) {
+          if (!wall[here.y][here.x][there1.y][there1.x] && !wall[there1.y][there1.x][there2.y][there2.x]) {
+            discovered[there2.y][there2.x] = true;
+            q.push({ there2, t - 1 });
+          }
+        }
       }
     }
   }
-  memcpy(board, tmp, sizeof(board));
 }
 
-void input() {
-  scanf("%d %d %d", &R, &C, &K);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  vector<pair<Pos, int>> machines;
+  cin >> R >> C >> K;
   for (int y = 0; y < R; ++y) {
     for (int x = 0; x < C; ++x) {
-      scanf("%d", &tmp[y][x]);
+      int num; cin >> num;
+      if (num == 1) machines.push_back({ {y, x}, 0 });
+      else if (num == 2) machines.push_back({ {y, x}, 2 });
+      else if (num == 3) machines.push_back({ {y, x}, 1 });
+      else if (num == 4) machines.push_back({ {y, x}, 3 });
+      else if (num == 5) invest.push_back({ y, x });
     }
   }
-  scanf("%d", &W);
+  cin >> W;
   for (int i = 0; i < W; ++i) {
     int y, x, t;
-    scanf("%d %d %d", &y, &x, &t);
+    cin >> y >> x >> t;
     --y; --x;
     if (t == 0) {
-      wall[y][x][y - 1][x] = wall[y - 1][x][y][x] = true; // 주의!!
+      wall[y][x][y - 1][x] = wall[y - 1][x][y][x] = true;
     }
     else {
       wall[y][x][y][x + 1] = wall[y][x + 1][y][x] = true;
     }
   }
 
-  for (int y = 0; y < R; ++y) {
-    for (int x = 0; x < C; ++x) {
-      if (1 <= tmp[y][x] && tmp[y][x] <= 4) {
-        if (tmp[y][x] == 1) set_heater(y, x, 0);
-        else if (tmp[y][x] == 2) set_heater(y, x, 2);
-        else if (tmp[y][x] == 3) set_heater(y, x, 3);
-        else if (tmp[y][x] == 4) set_heater(y, x, 1);
-      }
-      else if (tmp[y][x] == 5) {
-        check_list[check_num++] = { y, x };
-      }
-    }
-  }
-}
-
-bool range(int y, int x) { return 0 <= y && y < R && 0 <= x && x < C; }
-
-bool visited[20][20];
-void set_heater(int y, int x, int ld, int d, int rd, int v) {
-  if (v == 0 || visited[y][x]) return;
-  visited[y][x] = true;
-
-  int y1, x1, y2, x2;
-  // 1. 온도 상승
-  heat[y][x] += v;
-  // 2. 좌측 대각 확인
-  y1 = y + dy[ld]; x1 = x + dx[ld];
-  y2 = y1 + dy[d]; x2 = x1 + dx[d];
-  if (range(y1, x1) && range(y2, x2) && !wall[y][x][y1][x1] && !wall[y1][x1][y2][x2]) {
-    set_heater(y2, x2, ld, d, rd, v - 1);
-  }
-  // 3. 정면 확인
-  y1 = y + dy[d]; x1 = x + dx[d];
-  if (range(y1, x1) && !wall[y][x][y1][x1]) {
-    set_heater(y1, x1, ld, d, rd, v - 1);
-  }
-  // 4. 우측 대각 확인
-  y1 = y + dy[rd]; x1 = x + dx[rd];
-  y2 = y1 + dy[d]; x2 = x1 + dx[d];
-  if (range(y1, x1) && range(y2, x2) && !wall[y][x][y1][x1] && !wall[y1][x1][y2][x2]) {
-    set_heater(y2, x2, ld, d, rd, v - 1);
-  }
-}
-
-void set_heater(int y, int x, int d) {
-  memset(visited, false, sizeof(visited));
-  int ld = (d + 3) % 4, rd = (d + 1) % 4;
-  int yy = y + dy[d], xx = x + dx[d];
-  if (range(yy, xx)) {
-    set_heater(yy, xx, ld, d, rd, 5);
-  }
-}
-
-void print(const char* str) {
-  printf("\n%s\n", str);
-  for (int y = 0; y < R; ++y) {
-    for (int x = 0; x < C; ++x) {
-      printf("%3d", board[y][x]);
-    }
-    printf("\n");
+  for (auto& m : machines) {
+    calcTemp(m.first, m.second);
   }
 }
 ```
