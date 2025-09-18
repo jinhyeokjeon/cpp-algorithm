@@ -5129,7 +5129,7 @@ void print(const char* str); 함수를 정의하여 중간중간 출력하며 �
 
 ***
 
-## 주사위 굴리기 2
+## 23288. 주사위 굴리기 2
 > https://www.acmicpc.net/problem/23288
 
 ### 코드
@@ -5137,121 +5137,128 @@ void print(const char* str); 함수를 정의하여 중간중간 출력하며 �
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
+#include <vector>
 #include <queue>
+#include <cstring>
 using namespace std;
 
-void print(const char* str);
-
 struct Pos { int y, x; };
-enum Face { up, down, front, rgt, back, lft };
 const int dy[4] = { 0, 1, 0, -1 }, dx[4] = { 1, 0, -1, 0 };
-int dice[6] = { 1, 6, 5, 3, 2, 4 };
-Pos pos;
-int N, M, K, d_d, score;
-char board[20][20];
-void input();
 
-void move_dice();
+enum Face {
+  U, D, F, R, B, L
+};
 
+struct Dice {
+  int num[6];
+  void roll(int d);
+};
+
+int N, M, K;
+int board[20][20];
+int score[20][20];
 bool discovered[20][20];
-int get_score(int y, int x);
+void getScore(int y, int x);
+void init();
 
 int main() {
-  input();
-  for (int turn = 0; turn < K; ++turn) {
-    // 1. 주사위 굴러가기
-    move_dice();
-    // 2. 점수 획득
-    score += board[pos.y][pos.x] * get_score(pos.y, pos.x);
-    // 3. 방향 전환
-    if (dice[down] > board[pos.y][pos.x]) {
-      d_d = (d_d + 1) % 4;
+  init();
+
+  Dice dice = { {1, 6, 5, 3, 2, 4} };
+  Pos here = { 0, 0 };
+  int d = 0, ret = 0;
+
+  while (K--) {
+    // 1. 주사위 굴리기
+    Pos there = { here.y + dy[d], here.x + dx[d] };
+    if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= M) {
+      d = (d + 2) % 4;
+      there = { here.y + dy[d], here.x + dx[d] };
     }
-    else if (dice[down] < board[pos.y][pos.x]) {
-      d_d = (d_d + 3) % 4;
+    here = there;
+    dice.roll(d);
+
+    // 2. 점수 획득
+    ret += score[here.y][here.x];
+
+    // 3. 이동 방향 결정
+    if (dice.num[D] > board[here.y][here.x]) {
+      d = (d + 1) % 4;
+    }
+    else if (dice.num[D] < board[here.y][here.x]) {
+      d = (d + 3) % 4;
     }
   }
 
-  printf("%d", score);
+  cout << ret;
+
   return 0;
 }
 
-int get_score(int y, int x) {
-  memset(discovered, false, sizeof(discovered));
+void getScore(int y, int x) {
   queue<Pos> q;
-  int ret = 0;
-
-  discovered[y][x] = true;
+  vector<Pos> chosen;
   q.push({ y, x });
+  discovered[y][x] = true;
 
   while (!q.empty()) {
-    Pos here = q.front(); q.pop(); ++ret;
+    Pos here = q.front(); q.pop();
+    chosen.push_back(here);
     for (int d = 0; d < 4; ++d) {
-      int yy = here.y + dy[d], xx = here.x + dx[d];
-      if (yy < 0 || yy >= N || xx < 0 || xx >= M) continue;
-      if (discovered[yy][xx] || board[yy][xx] != board[here.y][here.x]) continue;
-      discovered[yy][xx] = true;
-      q.push({ yy, xx });
+      Pos there = { here.y + dy[d], here.x + dx[d] };
+      if (there.y < 0 || there.y >= N || there.x < 0 || there.x >= M) continue;
+      if (discovered[there.y][there.x] || board[here.y][here.x] != board[there.y][there.x]) continue;
+      discovered[there.y][there.x] = true;
+      q.push(there);
     }
   }
 
-  return ret;
+  int s = board[y][x] * chosen.size();
+  for (Pos& pos : chosen) {
+    score[pos.y][pos.x] = s;
+  }
 }
 
-void move_dice() {
-  int yy = pos.y + dy[d_d], xx = pos.x + dx[d_d];
-  if (yy < 0 || yy >= N || xx < 0 || xx >= M) {
-    d_d = (d_d + 2) % 4;
-    move_dice();
-    return;
-  }
-  // 1. 주사위 좌표 이동
-  pos = { yy, xx };
-  // 2. 주사위 위 숫자 변경
+void Dice::roll(int d) {
   int tmp[6];
-  memcpy(tmp, dice, sizeof(dice));
-  if (d_d == 0) { // 오른쪽으로 구름
-    tmp[down] = dice[rgt];
-    tmp[rgt] = dice[up];
-    tmp[up] = dice[lft];
-    tmp[lft] = dice[down];
+  if (d == 0) { // 오
+    tmp[R] = num[U]; tmp[L] = num[D]; tmp[F] = num[F];
+    tmp[D] = num[R]; tmp[B] = num[B]; tmp[U] = num[L];
   }
-  else if (d_d == 1) { // 아래로 구름
-    tmp[up] = dice[back];
-    tmp[front] = dice[up];
-    tmp[down] = dice[front];
-    tmp[back] = dice[down];
+  else if (d == 1) { // 아
+    tmp[F] = num[U]; tmp[B] = num[D]; tmp[D] = num[F];
+    tmp[R] = num[R]; tmp[U] = num[B]; tmp[L] = num[L];
   }
-  else if (d_d == 2) { // 왼쪽으로 구름
-    tmp[down] = dice[lft];
-    tmp[rgt] = dice[down];
-    tmp[up] = dice[rgt];
-    tmp[lft] = dice[up];
+  else if (d == 2) { // 왼
+    tmp[L] = num[U]; tmp[R] = num[D]; tmp[F] = num[F];
+    tmp[U] = num[R]; tmp[B] = num[B]; tmp[D] = num[L];
   }
-  else { // 위로 구름
-    tmp[up] = dice[front];
-    tmp[front] = dice[down];
-    tmp[down] = dice[back];
-    tmp[back] = dice[up];
+  else { // 위
+    tmp[B] = num[U]; tmp[F] = num[D]; tmp[U] = num[F];
+    tmp[R] = num[R]; tmp[D] = num[B]; tmp[L] = num[L];
   }
-  memcpy(dice, tmp, sizeof(dice));
+  memcpy(num, tmp, sizeof(num));
 }
 
-void input() {
-  scanf("%d %d %d", &N, &M, &K);
-  for (int i = 0; i < N; ++i) {
-    for (int j = 0; j < M; ++j) {
-      scanf("%hhd", &board[i][j]);
+void init() {
+  ios_base::sync_with_stdio(false);
+  cin.tie(NULL);
+
+  cin >> N >> M >> K;
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < M; ++x) {
+      cin >> board[y][x];
     }
   }
-}
 
-void print(const char* str) {
-  printf("\n%s\n", str);
-  printf("Up: %d, Down: %d, Front: %d, Right: %d, Back: %d, Left: %d\n", dice[up], dice[down], dice[front], dice[rgt], dice[back], dice[lft]);
-  printf("y: %d, x: %d, score: %d\n", pos.y, pos.x, score);
+  for (int y = 0; y < N; ++y) {
+    for (int x = 0; x < M; ++x) {
+      if (!discovered[y][x]) {
+        getScore(y, x);
+      }
+    }
+  }
 }
 ```
 </details>
