@@ -5471,135 +5471,362 @@ void init() {
 <summary>C++</summary>
 
 ```cpp
-#include <cstdio>
-#include <cstring>
+#include <iostream>
+#include <vector>
+#include <algorithm>
+using namespace std;
+
+struct Pos { 
+	int y, x;
+	bool operator==(const Pos& rhs) const {
+		return y == rhs.y && x == rhs.x;
+	}
+};
+
 
 const int dy[8] = { 0, -1, -1, -1, 0, 1, 1, 1 }, dx[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
-const int s_dy[4] = { -1, 0, 1, 0 }, s_dx[4] = { 0, -1, 0, 1 };
-int M, S, fish_num[4][4][8], tmp[4][4][8], copy_fish_num[4][4][8], smell[4][4], sy, sx;
-void input();
 
-void fish_move(int y, int x, int d);
-void shark_move();
+int M, S;
+vector<int> fishes[4][4];
+int smell[4][4];
+Pos shark;
+void init();
+
+vector<int> tmp[4][4];
+void copyFishes();
+
+void moveFishes(int y, int x);
+
+void moveShark();
 
 int main() {
-  input();
-  for (int turn = 0; turn < S; ++turn) {
-    // 1. 물고기 복제
-    memcpy(copy_fish_num, fish_num, sizeof(fish_num));
+	init();
 
-    // 2. 물고기 이동
-    memset(tmp, 0, sizeof(tmp));
-    for (int y = 0; y < 4; ++y) {
-      for (int x = 0; x < 4; ++x) {
-        for (int d = 0; d < 8; ++d) {
-          if (fish_num[y][x][d] > 0) {
-            fish_move(y, x, d);
-          }
-        }
-      }
-    }
-    memcpy(fish_num, tmp, sizeof(fish_num));
+	while (S--) {
+		// 1. 복제 마법 시전
+		copyFishes();
 
-    // 3. 상어 이동
-    shark_move();
+		// 2. 모든 물고기 한 칸 이동
+		for (int y = 0; y < 4; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				moveFishes(y, x);
+			}
+		}
 
-    // 4. 냄새 사라짐
-    for (int y = 0; y < 4; ++y) {
-      for (int x = 0; x < 4; ++x) {
-        if (smell[y][x] > 0) {
-          --smell[y][x];
-        }
-      }
-    }
+		// 3. 상어 연속 3칸 이동
+		moveShark();
 
-    // 5. 복제 마법 완료
-    for (int y = 0; y < 4; ++y) {
-      for (int x = 0; x < 4; ++x) {
-        for (int d = 0; d < 8; ++d) {
-          fish_num[y][x][d] += copy_fish_num[y][x][d];
-        }
-      }
-    }
-  }
+		// 4. 냄새 격자에서 사라짐
+		for (int y = 0; y < 4; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				if (smell[y][x]) {
+					--smell[y][x];
+				}
+			}
+		}
 
-  int sum = 0;
-  for (int y = 0; y < 4; ++y) {
-    for (int x = 0; x < 4; ++x) {
-      for (int d = 0; d < 8; ++d) {
-        sum += fish_num[y][x][d];
-      }
-    }
-  }
-  printf("%d", sum);
+		// 5. 복제 마법 완료
+		for (int y = 0; y < 4; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				fishes[y][x].insert(fishes[y][x].end(), tmp[y][x].begin(), tmp[y][x].end());
+			}
+		}
+	}
 
-  return 0;
+	int sum = 0;
+	for (int y = 0; y < 4; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			sum += fishes[y][x].size();
+		}
+	}
+	cout << sum;
+
+	return 0;
 }
 
-int visited_cnt[4][4], chosed[3], f_chosed[3], max_fish_num;
-int get_fish_num(int y, int x) {
-  int sum = 0;
-  for (int d = 0; d < 8; ++d) {
-    sum += fish_num[y][x][d];
-  }
-  return sum;
-}
-void dfs(int idx, int y, int x, int sum) {
-  if (idx == 3) {
-    if (max_fish_num < sum) {
-      max_fish_num = sum;
-      memcpy(f_chosed, chosed, sizeof(chosed));
-    }
-    return;
-  }
-  for (int d = 0; d < 4; ++d) {
-    int yy = y + s_dy[d], xx = x + s_dx[d];
-    if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4) continue;
-    chosed[idx] = d;
-    ++visited_cnt[yy][xx];
-    dfs(idx + 1, yy, xx, sum + (visited_cnt[yy][xx] == 1 ? get_fish_num(yy, xx) : 0));
-    --visited_cnt[yy][xx];
-  }
-}
-void shark_move() {
-  memset(visited_cnt, 0, sizeof(visited_cnt));
-  max_fish_num = -1;
-  dfs(0, sy, sx, 0);
-
-  for (int i = 0; i < 3; ++i) {
-    sy += s_dy[f_chosed[i]];
-    sx += s_dx[f_chosed[i]];
-    for (int d = 0; d < 8; ++d) {
-      if (fish_num[sy][sx][d] > 0) {
-        fish_num[sy][sx][d] = 0;
-        smell[sy][sx] = 3;
-      }
-    }
-  }
+bool check(Pos p) {
+	return 0 <= p.y && p.y < 4 && 0 <= p.x && p.x < 4;
 }
 
-void fish_move(int y, int x, int d) {
-  int yy, xx, dd = d;
-  for (int i = 0; i < 8; ++i) {
-    yy = y + dy[dd], xx = x + dx[dd];
-    if (0 <= yy && yy < 4 && 0 <= xx && xx < 4 && smell[yy][xx] == 0 && !(yy == sy && xx == sx)) {
-      tmp[yy][xx][dd] += fish_num[y][x][d];
-      return;
-    }
-    dd = (dd + 7) % 8;
-  }
-  tmp[y][x][d] += fish_num[y][x][d];
+void moveShark() {
+	// 상(2), 좌(0), 하(6), 우(4) 순으로 움직여야 함
+	// 4^3 == 64가지 경우의 수
+	int dir[4] = { 2, 0, 6, 4 };
+	int fishCnt[4][4][4] = {0,};
+	int maxFishCnt = 0;
+	
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			for (int k = 0; k < 4; ++k) {
+				Pos t1 = { shark.y + dy[dir[i]], shark.x + dx[dir[i]] };
+				Pos t2 = { t1.y + dy[dir[j]], t1.x + dx[dir[j]] };
+				Pos t3 = { t2.y + dy[dir[k]], t2.x + dx[dir[k]] };
+				if (!check(t1) || !check(t2) || !check(t3)) continue;
+				fishCnt[i][j][k] = fishes[t1.y][t1.x].size() + fishes[t2.y][t2.x].size();
+				if (!(t1 == t3)) {
+					fishCnt[i][j][k] += fishes[t3.y][t3.x].size();
+				}
+				maxFishCnt = max(maxFishCnt, fishCnt[i][j][k]);
+			}
+		}
+	}
+
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			for (int k = 0; k < 4; ++k) {
+				Pos t1 = { shark.y + dy[dir[i]], shark.x + dx[dir[i]] };
+				Pos t2 = { t1.y + dy[dir[j]], t1.x + dx[dir[j]] };
+				Pos t3 = { t2.y + dy[dir[k]], t2.x + dx[dir[k]] };
+				if (!check(t1) || !check(t2) || !check(t3)) continue;
+				if (fishCnt[i][j][k] == maxFishCnt) {
+					if (!fishes[t1.y][t1.x].empty()) {
+						smell[t1.y][t1.x] = 3;
+						fishes[t1.y][t1.x].clear();
+					}
+					if (!fishes[t2.y][t2.x].empty()) {
+						smell[t2.y][t2.x] = 3;
+						fishes[t2.y][t2.x].clear();
+					}
+					if (!fishes[t3.y][t3.x].empty()) {
+						smell[t3.y][t3.x] = 3;
+						fishes[t3.y][t3.x].clear();
+					}
+					shark = t3;
+					return;
+				}
+			}
+		}
+	}
 }
 
-void input() {
-  scanf("%d %d", &M, &S);
-  for (int i = 0; i < M; ++i) {
-    int y, x, d;
-    scanf("%d %d %d", &y, &x, &d);
-    ++fish_num[y - 1][x - 1][d - 1];
-  }
-  scanf("%d %d", &sy, &sx);
-  --sy; --sx;
+void moveFishes(int y, int x) {
+	for (int d : tmp[y][x]) {
+		int i;
+		for (i = 0; i < 8; ++i) {
+			int yy = y + dy[d], xx = x + dx[d];
+			if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4 || smell[yy][xx] || Pos{ yy, xx } == shark) {
+				d = (d + 7) % 8;
+				continue;
+			}
+			fishes[yy][xx].push_back(d);
+			break;
+		}
+		if (i == 8) fishes[y][x].push_back(d);
+	}
+}
+
+void copyFishes() {
+	for (int y = 0; y < 4; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			tmp[y][x] = fishes[y][x];
+			fishes[y][x].clear();
+		}
+	}
+}
+
+void init() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
+
+	cin >> M >> S;
+	for (int i = 0; i < M; ++i) {
+		int y, x, d;
+		cin >> y >> x >> d;
+		--y; --x; --d;
+		fishes[y][x].push_back(d);
+	}
+	cin >> shark.y >> shark.x;
+	--shark.y; --shark.x;
+}
+
+/*
+***************************************************************
+*/
+
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cstring>
+using namespace std;
+
+struct Pos { 
+	int y, x;
+	bool operator==(const Pos& rhs) const {
+		return y == rhs.y && x == rhs.x;
+	}
+};
+
+
+const int dy[8] = { 0, -1, -1, -1, 0, 1, 1, 1 }, dx[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+
+int M, S;
+int fishes[4][4][8];
+int smell[4][4];
+Pos shark;
+void init();
+
+int tmp[4][4][8];
+void copyFishes();
+
+int getSum(int y, int x);
+
+void moveFishes(int y, int x);
+
+void moveShark();
+
+int main() {
+	init();
+
+	while (S--) {
+		// 1. 복제 마법 시전
+		copyFishes();
+
+		// 2. 모든 물고기 한 칸 이동
+		for (int y = 0; y < 4; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				moveFishes(y, x);
+			}
+		}
+
+		// 3. 상어 연속 3칸 이동
+		moveShark();
+
+		// 4. 냄새 격자에서 사라짐
+		for (int y = 0; y < 4; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				if (smell[y][x]) {
+					--smell[y][x];
+				}
+			}
+		}
+
+		// 5. 복제 마법 완료
+		for (int y = 0; y < 4; ++y) {
+			for (int x = 0; x < 4; ++x) {
+				for (int d = 0; d < 8; ++d) {
+					fishes[y][x][d] += tmp[y][x][d];
+				}
+			}
+		}
+	}
+
+	int ret = 0;
+	for (int y = 0; y < 4; ++y) {
+		for (int x = 0; x < 4; ++x) {
+			ret += getSum(y, x);
+		}
+	}
+	cout << ret;
+
+	return 0;
+}
+
+bool check(Pos p) {
+	return 0 <= p.y && p.y < 4 && 0 <= p.x && p.x < 4;
+}
+
+void moveShark() {
+	// 상(2), 좌(0), 하(6), 우(4) 순으로 움직여야 함
+	// 4^3 == 64가지 경우의 수
+	int dir[4] = { 2, 0, 6, 4 };
+	int fishCnt[4][4][4] = {0,};
+	int maxFishCnt = 0;
+	
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			for (int k = 0; k < 4; ++k) {
+				Pos t1 = { shark.y + dy[dir[i]], shark.x + dx[dir[i]] };
+				Pos t2 = { t1.y + dy[dir[j]], t1.x + dx[dir[j]] };
+				Pos t3 = { t2.y + dy[dir[k]], t2.x + dx[dir[k]] };
+				if (!check(t1) || !check(t2) || !check(t3)) continue;
+				fishCnt[i][j][k] = getSum(t1.y, t1.x) + getSum(t2.y, t2.x);
+				if (!(t1 == t3)) {
+					fishCnt[i][j][k] += getSum(t3.y, t3.x);
+				}
+				maxFishCnt = max(maxFishCnt, fishCnt[i][j][k]);
+			}
+		}
+	}
+
+	for (int i = 0; i < 4; ++i) {
+		for (int j = 0; j < 4; ++j) {
+			for (int k = 0; k < 4; ++k) {
+				Pos t1 = { shark.y + dy[dir[i]], shark.x + dx[dir[i]] };
+				Pos t2 = { t1.y + dy[dir[j]], t1.x + dx[dir[j]] };
+				Pos t3 = { t2.y + dy[dir[k]], t2.x + dx[dir[k]] };
+				if (!check(t1) || !check(t2) || !check(t3)) continue;
+				if (fishCnt[i][j][k] == maxFishCnt) {
+					if (getSum(t1.y, t1.x)) {
+						smell[t1.y][t1.x] = 3;
+						for (int d = 0; d < 8; ++d) {
+							fishes[t1.y][t1.x][d] = 0;
+						}
+					}
+					if (getSum(t2.y, t2.x)) {
+						smell[t2.y][t2.x] = 3;
+						for (int d = 0; d < 8; ++d) {
+							fishes[t2.y][t2.x][d] = 0;
+						}
+					}
+					if (getSum(t3.y, t3.x)) {
+						smell[t3.y][t3.x] = 3;
+						for (int d = 0; d < 8; ++d) {
+							fishes[t3.y][t3.x][d] = 0;
+						}
+					}
+					shark = t3;
+					return;
+				}
+			}
+		}
+	}
+}
+
+void moveFishes(int y, int x) {
+	for (int dir = 0; dir < 8; ++dir) {
+		if (tmp[y][x][dir] == 0) continue;
+		int i, d = dir;
+		for (i = 0; i < 8; ++i) {
+			int yy = y + dy[d], xx = x + dx[d];
+			if (yy < 0 || yy >= 4 || xx < 0 || xx >= 4 || smell[yy][xx] || Pos{ yy, xx } == shark) {
+				d = (d + 7) % 8;
+				continue;
+			}
+			fishes[yy][xx][d] += tmp[y][x][dir];
+			break;
+		}
+		if (i == 8) {
+			fishes[y][x][dir] += tmp[y][x][dir];
+		}
+	}
+}
+
+void copyFishes() {
+	memcpy(tmp, fishes, sizeof(fishes));
+	memset(fishes, 0, sizeof(fishes));
+}
+
+void init() {
+	ios_base::sync_with_stdio(false);
+	cin.tie(NULL);
+
+	cin >> M >> S;
+	for (int i = 0; i < M; ++i) {
+		int y, x, d;
+		cin >> y >> x >> d;
+		--y; --x; --d;
+		++fishes[y][x][d];
+	}
+	cin >> shark.y >> shark.x;
+	--shark.y; --shark.x;
+}
+
+int getSum(int y, int x) {
+	int ret = 0;
+	for (int d = 0; d < 8; ++d) {
+		ret += fishes[y][x][d];
+	}
+	return ret;
 }
 ```
 </details>
@@ -5615,7 +5842,11 @@ void input() {
 
 이를 이용하면 물고기 수 배열을 int[4][4][8] 로 선언하면 (y, x) 에서의 dir 에 해당하는 물고기의 총 개수를 담을 수 있다. (1,000,000 이하임을 알고 있으므로 int에 담을 수 있음.)
 
-dfs 에서 같은 정점을 여러번 방문할 수 있지만, 첫 번째 방문에서만 특정 행동을 수행하게 하려면 visited를 int 배열로 만든 후, 0일 때만 그 행동을 수행하게 하면 된다.
+또한 같은 위치, 같은 방향인 물고기는 모두 같은 행동을 하므로 개수로 묶어서 계산해도 됨을 알 수 있다.
+
+> 두 방법을 모두 구현한 코드를 비교하자.
+
+dfs 에서 같은 정점을 여러번 방문할 수 있지만, 첫 번째 방문에서만 특정 행동을 수행하게 하려면 visited를 int 배열로 만든 후, 방문할때 값을 증가하고, 빠져나올 때 값을 줄이면 지금까지의 선택에서 몇개가 방문했는지를 알 수 있다.
 
 ***
 
